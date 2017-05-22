@@ -1,0 +1,54 @@
+# based on https://hub.docker.com/r/jauer/moodle/ but modified
+# for Moodle 3 and PHP 7 (Ubuntu 14 doesn't support a high enough PHP version
+# for Moodle 3); also has some gubbins so it works better with docker-compose
+
+FROM ubuntu:16.04
+MAINTAINER Elliot Smith <elliot.smith@bbc.co.uk>
+
+# Let the container know that there is no tty
+ENV DEBIAN_FRONTEND noninteractive
+
+# This preserves Moodle's data even if the container is destroyed;
+# Moodle config.php $CFG->dataroot should be set to this path
+VOLUME ["/var/moodledata"]
+
+EXPOSE 80 443
+
+RUN apt-get update && apt-get -y upgrade
+
+RUN apt-get -y install mysql-client pwgen curl apache2 postfix netcat \
+    php7.0 php7.0-gd php7.0-intl php7.0-curl php7.0-xml php7.0-zip \
+    php7.0-xmlrpc php7.0-mysql libapache2-mod-php7.0
+
+# Enable SSL, Moodle requires it
+RUN a2enmod ssl && a2ensite default-ssl
+
+# Moodle and Apache config and scripts
+COPY moodle-config.php /var/www/html/config.php
+COPY ./foreground-apache.sh /etc/apache2/foreground-apache.sh
+COPY ./run-moodle.sh /run.sh
+
+ENV MOODLE_URL=${MOODLE_URL} \
+    MYSQL_HOST=${MYSQL_HOST} \
+    MYSQL_DATABASE=${MYSQL_DATABASE} \
+    MYSQL_USER=${MYSQL_USER} \
+    MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+# Download Moodle tarball;
+# get latest URL from https://download.moodle.org/releases/latest/
+RUN curl -L -o /tmp/moodle.tgz https://download.moodle.org/download.php/direct/stable33/moodle-3.3.tgz
+
+# unpack Moodle, configure it and Apache
+RUN cd /tmp && \
+    tar zxf moodle.tgz && \
+    mv /tmp/moodle/* /var/www/html/ && \
+    rm /var/www/html/index.html && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod +x /etc/apache2/foreground-apache.sh && \
+    chmod +x /run.sh && \
+    rm /tmp/moodle.tgz
+
+EXPOSE 3306
+
+ENTRYPOINT ["/run.sh"]
+CMD ["/etc/apache2/foreground-apache.sh"]

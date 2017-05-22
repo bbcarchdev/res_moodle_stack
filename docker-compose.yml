@@ -1,0 +1,36 @@
+version: '2'
+services:
+  moodle:
+    build:
+      context: ./build-moodle
+      dockerfile: Dockerfile-moodle
+      args:
+        - http_proxy=${http_proxy}
+        - https_proxy=${http_proxy}
+    ports:
+      - "8080:80"
+      - "8443:443"
+    links:
+      - mariadb
+    environment:
+      - MYSQL_HOST=mariadb # should match the entry under links (above)
+      - MYSQL_DATABASE=moodle
+      - MYSQL_USER=moodle
+      - MYSQL_PASSWORD=moodle
+      - MOODLE_URL=http://localhost:8080
+  mariadb:
+    build:
+      context: ./build-mariadb
+      dockerfile: Dockerfile-mariadb
+      args:
+        - http_proxy=${http_proxy}
+        - https_proxy=${http_proxy}
+    expose:
+      - "3306"
+    ports:
+      - "6306:3306"
+    environment:
+      - MYSQL_DATABASE=moodle
+      - MYSQL_USER=moodle
+      - MYSQL_PASSWORD=moodle
+      - MYSQL_ROOT_PASSWORD=moodle

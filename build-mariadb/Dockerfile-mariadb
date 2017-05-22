@@ -1,0 +1,28 @@
+# based on centurylink/mysql (https://github.com/CenturyLinkLabs/docker-mysql)
+# but updated to Ubuntu 16.04 and with a config file which Moodle 3 is happy
+# with (specific InnoDB settings need to be enabled which centurylink doesn't
+# enable)
+
+FROM ubuntu:16.04
+MAINTAINER Elliot Smith <elliot.smith@bbc.co.uk>
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \
+    MYSQL_DATABASE=${MYSQL_DATABASE} \
+    MYSQL_USER=${MYSQL_USER} \
+    MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+RUN apt-get update && apt-get -y upgrade
+RUN apt-get install -y mysql-server openssl
+
+COPY my.cnf /etc/mysql/conf.d/my.cnf
+COPY ./run-mariadb.sh /run.sh
+RUN chmod +x /run.sh && \
+    sed -i 's/bind-address/#bind-address/' /etc/mysql/mysql.conf.d/mysqld.cnf && \
+    sed -i 's/log_error/#log_error/' /etc/mysql/mysql.conf.d/mysqld.cnf
+
+EXPOSE 3306
+
+VOLUME ["/var/lib/mysql"]
+
+CMD ["/run.sh"]

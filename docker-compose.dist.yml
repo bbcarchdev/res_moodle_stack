@@ -1,0 +1,32 @@
+# the following variables should be set for the build:
+# MYSQL_DATABASE
+# MYSQL_USER
+# MYSQL_PASSWORD
+# MYSQL_ROOT_PASSWORD
+# MOODLE_URL
+version: '2'
+services:
+  moodle:
+    image: ${MOODLE_PLUGIN_IMAGE}
+    ports:
+      - "80:80"
+      - "443:443"
+    links:
+      - mariadb
+    environment:
+      - MYSQL_HOST=mariadb
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MOODLE_URL=${MOODLE_URL} # host name of the Moodle AWS server
+    mem_limit: 512m
+  mariadb:
+    image: ${MARIADB_IMAGE}
+    expose:
+      - "3306"
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    mem_limit: 384m

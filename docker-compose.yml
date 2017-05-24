@@ -12,14 +12,16 @@ services:
       - "8443:443"
     links:
       - mariadb
+      - pluginservice
     environment:
       - MYSQL_HOST=mariadb # should match the entry under links (above)
+      - PLUGINSERVICE_URL=http://localhost:8888 # should be accessible from user's browser
       - MYSQL_DATABASE=moodle
       - MYSQL_USER=moodle
       - MYSQL_PASSWORD=moodle
       - MOODLE_URL=http://localhost:8080
     volumes:
-      - ../plugin:/var/www/html/repository/res
+      - ./plugin:/var/www/html/repository/res
   mariadb:
     build:
       context: ./build-mariadb
@@ -27,8 +29,6 @@ services:
       args:
         - http_proxy=${http_proxy}
         - https_proxy=${http_proxy}
-    expose:
-      - "3306"
     ports:
       - "6306:3306"
     environment:
@@ -36,3 +36,16 @@ services:
       - MYSQL_USER=moodle
       - MYSQL_PASSWORD=moodle
       - MYSQL_ROOT_PASSWORD=moodle
+  pluginservice:
+    build:
+      context: ./build-pluginservice
+      dockerfile: Dockerfile-pluginservice
+      args:
+        - http_proxy=${http_proxy}
+        - https_proxy=${http_proxy}
+    ports:
+      - "8888:80"
+    environment:
+      - ACROPOLIS_URL=http://acropolis.org.uk/
+    volumes:
+      - ./pluginservice:/var/www/html/

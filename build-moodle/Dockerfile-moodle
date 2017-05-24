@@ -27,7 +27,8 @@ ENV MOODLE_URL=${MOODLE_URL} \
     MYSQL_HOST=${MYSQL_HOST} \
     MYSQL_DATABASE=${MYSQL_DATABASE} \
     MYSQL_USER=${MYSQL_USER} \
-    MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    MYSQL_PASSWORD=${MYSQL_PASSWORD} \
+    PLUGINSERVICE_HOST=${PLUGINSERVICE_HOST}
 
 # Download Moodle tarball;
 # get latest URL from https://download.moodle.org/releases/latest/
@@ -48,8 +49,6 @@ RUN cd /tmp && \
     chmod +x /etc/apache2/foreground-apache.sh && \
     chmod +x /run.sh && \
     rm /tmp/moodle.tgz
-
-EXPOSE 3306
 
 ENTRYPOINT ["/run.sh"]
 CMD ["/etc/apache2/foreground-apache.sh"]

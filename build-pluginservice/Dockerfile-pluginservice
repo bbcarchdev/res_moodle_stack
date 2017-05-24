@@ -1,0 +1,23 @@
+# configuration for a Moodle-plugin compatible service
+
+FROM ubuntu:16.04
+MAINTAINER Elliot Smith <elliot.smith@bbc.co.uk>
+
+# Let the container know that there is no tty
+ENV DEBIAN_FRONTEND noninteractive
+
+EXPOSE 80
+
+RUN apt-get update && apt-get -y upgrade
+
+RUN apt-get -y install apache2 php7.0 php7.0-curl libapache2-mod-php7.0
+
+RUN apt-get -y install curl vim netcat
+
+COPY ./foreground-apache.sh /etc/apache2/foreground-apache.sh
+
+RUN chown -R www-data:www-data /var/www/html && \
+    rm /var/www/html/index.html && \
+    chmod +x /etc/apache2/foreground-apache.sh
+
+ENTRYPOINT ["/etc/apache2/foreground-apache.sh"]

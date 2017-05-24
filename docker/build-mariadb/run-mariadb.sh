@@ -30,4 +30,4 @@ fi
 
 /usr/bin/mysql_ssl_rsa_setup
 
-/usr/sbin/mysqld --user=mysql --explicit_defaults_for_timestamp --init-file=$tfile
+exec /usr/sbin/mysqld --user=mysql --explicit_defaults_for_timestamp --init-file=$tfile

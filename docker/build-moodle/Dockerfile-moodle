@@ -23,11 +23,6 @@ RUN apt-get -y install mysql-client pwgen curl apache2 postfix netcat \
 # Enable SSL, Moodle requires it
 RUN a2enmod ssl && a2ensite default-ssl
 
-# Moodle and Apache config and scripts
-COPY moodle-config.php /var/www/html/config.php
-COPY ./foreground-apache.sh /etc/apache2/foreground-apache.sh
-COPY ./run-moodle.sh /run.sh
-
 ENV MOODLE_URL=${MOODLE_URL} \
     MYSQL_HOST=${MYSQL_HOST} \
     MYSQL_DATABASE=${MYSQL_DATABASE} \
@@ -37,6 +32,12 @@ ENV MOODLE_URL=${MOODLE_URL} \
 # Download Moodle tarball;
 # get latest URL from https://download.moodle.org/releases/latest/
 RUN curl -L -o /tmp/moodle.tgz https://download.moodle.org/download.php/direct/stable33/moodle-3.3.tgz
+
+# Moodle and Apache config and scripts
+COPY moodle-config.php /var/www/html/config.php
+COPY ./foreground-apache.sh /etc/apache2/foreground-apache.sh
+COPY ./run-moodle.sh /run.sh
+COPY ./check-database.php /check-database.php
 
 # unpack Moodle, configure it and Apache
 RUN cd /tmp && \

@@ -1,0 +1,26 @@
+{
+    "name": "res/moodle-plugin",
+    "version": "0.0.1",
+    "description": "A RES plugin for Moodle.",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Elliot Smith",
+            "email": "elliot.smith@bbc.co.uk"
+        }
+    ],
+    "autoload": {
+      "psr-4": {
+        "res\\moodle\\": "src/"
+      }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://git.bbcarchdev.net/res/liblod-php.git"
+        }
+    ],
+    "require": {
+        "res/liblod-php": "@dev"
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "name": "res/moodle_plugin_service",
+    "version": "0.0.1",
+    "type": "project",
+    "license": "Apache v2",
+    "description": "A Moodle plugin service for RES",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@bitbucket.org:townxelliot/res-php-client.git"
+        }
+    ],
+    "authors": [
+        {
+            "name": "Elliot Smith",
+            "email": "elliot.smith@bbc.co.uk"
+        }
+    ],
+    "require": {
+        "res/liblod": "@dev",
+        "slim/slim": "^3.8"
+    }
+}

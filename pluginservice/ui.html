@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>RES search</title>
+
+    <!-- Bootstrap -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+      #query-input {
+        width: 80%;
+      }
+      h2 {
+        font-size: 20px;
+      }
+      .ui-active {
+        display: block;
+      }
+      .ui-inactive {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container panel">
+      <h1>RES search</h1>
+
+      <form class="form-group form-inline">
+        <input type="text" class="form-control" id="query-input" name="query-input"
+               placeholder="Search RES for topics" value="">
+        <button id="search-button" class="btn btn-primary">Search</button>
+      </form>
+    </div>
+
+    <!-- search results area -->
+    <div class="container ui-active" id="search-results-area">
+      <h2>Search results</h2>
+      <div style="background-color: red; width: 100px; height: 100px; color: white;" id="topic-box-no-id">Mock topic</div>
+    </div>
+
+    <!-- topic area -->
+    <div class="container ui-inactive" id="topic-area">
+      <p><div style="background-color: blue; width: 100px; height: 25px; color: white;" id="back-button">&lt; back to search</div></p>
+      <h2>Topic details</h2>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="./js/jquery.min.js"></script>
+
+    <!-- Include all compiled plugins -->
+    <script src="./js/bootstrap.min.js"></script>
+
+    <script src="./js/app.js"></script>
+
+    <script type="text/javascript">
+      $(document).ready(function() {
+        console.log('DOM ready');
+      });
+    </script>
+  </body>
+</html>

@@ -1,25 +1,34 @@
 <?php
-require_once(dirname(__FILE__) . '/vendor/autoload.php');
+require_once(__DIR__ . '/vendor/autoload.php');
 
 use \Slim\App;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-use res\liblod\LOD;
-
-
 $app = new \Slim\App();
 
-$acropolis_url = getenv('ACROPOLIS_URL');
+$acropolisUrl = getenv('ACROPOLIS_URL');
 
 /*
  * paths:
  *
  * - /?q=<search> -> perform a search and return list of matching topics
- * - /topic/<topic ID> -> return topic data, including list of related media
-*/
+ * - /topic/<topic ID> -> return topic data, including list of related media;
+ *   when a piece of media is clicked, invoke a callback URL (if provided)
+ *   with details of that piece of media (to populate Moodle file picker)
+ */
+
+// single HTML page: UI for searching Acropolis, showing search results, and
+// displaying a topic with its media
+$app->get('/', function (Request $request, Response $response) {
+    $html = file_get_contents(__DIR__ . '/ui.html');
+    $response->getBody()->write($html);
+    return $response->withHeader('Content-Type', 'text/html')
+                    ->withHeader('Content-Location', '/ui.html');
+});
+
 // proxy for searches on Acropolis
-$app->get('/', function(Request $request, Response $response) use($acropolis_url) {
+$app->get('/api/search', function(Request $request, Response $response) use($acropolisUrl) {
     $query = $request->getQueryParam('q', $default=null);
 
     if(!$query)
@@ -28,14 +37,14 @@ $app->get('/', function(Request $request, Response $response) use($acropolis_url
     }
     else
     {
-        return 'will search for ' . $query . ' on ' . $acropolis_url;
+        return 'will search for ' . $query . ' on ' . $acropolisUrl;
     }
 });
 
 // proxy for topic requests to Acropolis
-$app->get('/topic/{topicIdentifier}', function(Request $request, Response $response, $args) use($acropolis_url) {
+$app->get('/api/topic/{topicIdentifier}', function(Request $request, Response $response, $args) use($acropolisUrl) {
     $topicIdentifier = $args['topicIdentifier'];
-    return 'here would be results for topic ' . $topicIdentifier . ' from ' . $acropolis_url;
+    return 'here would be results for topic ' . $topicIdentifier . ' from ' . $acropolisUrl;
 });
 
 $app->run();

@@ -32,31 +32,38 @@ $app->get('/', function (Request $request, Response $response) {
 // proxy for searches on Acropolis
 // call with /api/search?q=<search term>
 $app->get('/api/search', function(Request $request, Response $response) use($acropolisUrl) {
-    $query = $request->getQueryParam('q', $default=null);
+    $query = $request->getQueryParam('q', $default=NULL);
     $limit = $request->getQueryParam('limit', $default=10);
     $offset = $request->getQueryParam('', $default=0);
 
-    $results = array();
+    $result = array(
+        'acropolis_uri' => NULL,
+        'query' => $query,
+        'limit' => $limit,
+        'offset' => $offset,
+        'hasNext' => FALSE,
+        'items' => array()
+    );
 
     if($query)
     {
-        $url = $acropolisUrl .
+        $uri = $acropolisUrl .
                '?q=' . urlencode($query) .
                '&limit=' . urlencode($limit) .
-               '&offset=' . urlencode($offset);
+               '&offset=' . urlencode($offset) .
+               '&media=any';
+
+        $result['acropolis_uri'] = $uri;
 
         $lod = new LOD();
-        $lod->fetch($url);
+        $searchResultResource = $lod[$uri];
 
-        $resource = $lod[$url];
-
-        foreach($resource['olo:slot'] as $slot)
+        foreach($searchResultResource['olo:slot'] as $slot)
         {
-            $uri = $slot->value;
+            $slotUri = $slot->value;
+            $slotResource = $lod[$slotUri];
 
-            $slotResource = $lod[$uri];
-
-            if (!$slotResource)
+            if(!$slotResource)
             {
                 continue;
             }
@@ -67,11 +74,11 @@ $app->get('/api/search', function(Request $request, Response $response) use($acr
                 {
                     $topic = $lod[$slotItem->value];
 
-                    $topicUri = $request->getUri()->withPath('/api/topic');
-                    $topicUri = $topicUri->withQuery('uri=' . $topic->uri);
+                    $topicApiUri = $request->getUri()->withPath('/api/topic');
+                    $topicApiUri = $topicApiUri->withQuery('uri=' . $topic->uri);
 
-                    $results[] = array(
-                        'uri' => "$topicUri",
+                    $result['items'][] = array(
+                        'api_uri' => "$topicApiUri",
                         'label' => "{$topic['dcterms:title,rdfs:label']}",
                         'description' => "{$topic['dcterms:description,rdfs:comment']}"
                     );
@@ -80,14 +87,57 @@ $app->get('/api/search', function(Request $request, Response $response) use($acr
         }
     }
 
-    return $response->withJson($results);
+    return $response->withJson($result);
 });
 
 // proxy for topic requests to Acropolis
 // call with /api/topic?uri=<acropolis URI>
 $app->get('/api/topic', function(Request $request, Response $response) use($acropolisUrl) {
-    $topicUri = $request->getQueryParam('uri', $default=null);;
-    return 'here would be results for topic ' . $topicUri . ' from ' . $acropolisUrl;
+    $topicUri = $request->getQueryParam('uri', $default=NULL);
+
+    $lod = new LOD();
+    $topic = $lod[$topicUri];
+
+    if(!$topic)
+    {
+        return $response->withJson(NULL);
+    }
+
+    $result = array(
+        'uri' => "{$topic->uri}",
+        'label' => "{$topic['rdfs:label,dcterms:title']}",
+        'description' => "{$topic['dcterms:description,rdfs:comment']}"
+    );
+
+    // get olo:slots
+    $slots = $topic['olo:slot'];
+
+    // get olo:items for those olo:slots
+    $itemUris = array();
+    foreach($slots as $slot)
+    {
+        $slotResource = $lod["$slot"];
+        $itemUris[] = '' . $slotResource['olo:item'];
+    }
+
+    // fetch each item (NB these items are RES proxy resources without much
+    // detail in them)
+    foreach($itemUris as $itemUri)
+    {
+        $lod->fetch($itemUri);
+
+        // look for resources which are owl:sameAs the item URIs; this is
+        // because the original holds useful information which the RES proxy
+        // doesn't have, so we'd prefer to use the original if we can
+
+
+        // resolve those resources - we just use whatever RES has cached, so
+        // we don't need yet another fetch; if they can't be resolved, just use
+        // the proxy resource instead, which should have at least an mrss:player,
+        // mrss:content or foaf:page
+    }
+
+    return $response->withJson($result);
 });
 
 $app->run();

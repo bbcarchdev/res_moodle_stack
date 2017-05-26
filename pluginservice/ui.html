@@ -11,8 +11,14 @@
       #query-input {
         width: 80%;
       }
+      #search-button {
+        width: 19%;
+      }
+      h1 {
+        font-size: 24px;
+      }
       h2 {
-        font-size: 20px;
+        font-size: 18px;
       }
       .ui-active {
         display: block;
@@ -26,7 +32,7 @@
     <div class="container panel">
       <h1>RES search</h1>
 
-      <form class="form-group form-inline">
+      <form class="form-group form-inline" id="search-form">
         <input type="text" class="form-control" id="query-input" name="query-input"
                placeholder="Search RES for topics" value="">
         <button id="search-button" class="btn btn-primary">Search</button>
@@ -34,13 +40,13 @@
     </div>
 
     <!-- search results area -->
-    <div class="container ui-active" id="search-results-area">
+    <div class="container ui-active" id="search-results-panel">
       <h2>Search results</h2>
       <div style="background-color: red; width: 100px; height: 100px; color: white;" id="topic-box-no-id">Mock topic</div>
     </div>
 
     <!-- topic area -->
-    <div class="container ui-inactive" id="topic-area">
+    <div class="container ui-inactive" id="topic-panel">
       <p><div style="background-color: blue; width: 100px; height: 25px; color: white;" id="back-button">&lt; back to search</div></p>
       <h2>Topic details</h2>
     </div>

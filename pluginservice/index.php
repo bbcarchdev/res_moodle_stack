@@ -5,6 +5,8 @@ use \Slim\App;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
+use res\liblod\LOD;
+
 $app = new \Slim\App();
 
 $acropolisUrl = getenv('ACROPOLIS_URL');
@@ -28,23 +30,64 @@ $app->get('/', function (Request $request, Response $response) {
 });
 
 // proxy for searches on Acropolis
+// call with /api/search?q=<search term>
 $app->get('/api/search', function(Request $request, Response $response) use($acropolisUrl) {
     $query = $request->getQueryParam('q', $default=null);
+    $limit = $request->getQueryParam('limit', $default=10);
+    $offset = $request->getQueryParam('', $default=0);
 
-    if(!$query)
+    $results = array();
+
+    if($query)
     {
-        return 'please supply a query using the ?q= querystring parameter';
+        $url = $acropolisUrl .
+               '?q=' . urlencode($query) .
+               '&limit=' . urlencode($limit) .
+               '&offset=' . urlencode($offset);
+
+        $lod = new LOD();
+        $lod->fetch($url);
+
+        $resource = $lod[$url];
+
+        foreach($resource['olo:slot'] as $slot)
+        {
+            $uri = $slot->value;
+
+            $slotResource = $lod[$uri];
+
+            if (!$slotResource)
+            {
+                continue;
+            }
+
+            foreach($slotResource['olo:item'] as $slotItem)
+            {
+                if($slotItem->isResource())
+                {
+                    $topic = $lod[$slotItem->value];
+
+                    $topicUri = $request->getUri()->withPath('/api/topic');
+                    $topicUri = $topicUri->withQuery('uri=' . $topic->uri);
+
+                    $results[] = array(
+                        'uri' => "$topicUri",
+                        'label' => "{$topic['dcterms:title,rdfs:label']}",
+                        'description' => "{$topic['dcterms:description,rdfs:comment']}"
+                    );
+                }
+            }
+        }
     }
-    else
-    {
-        return 'will search for ' . $query . ' on ' . $acropolisUrl;
-    }
+
+    return $response->withJson($results);
 });
 
 // proxy for topic requests to Acropolis
-$app->get('/api/topic/{topicIdentifier}', function(Request $request, Response $response, $args) use($acropolisUrl) {
-    $topicIdentifier = $args['topicIdentifier'];
-    return 'here would be results for topic ' . $topicIdentifier . ' from ' . $acropolisUrl;
+// call with /api/topic?uri=<acropolis URI>
+$app->get('/api/topic', function(Request $request, Response $response) use($acropolisUrl) {
+    $topicUri = $request->getQueryParam('uri', $default=null);;
+    return 'here would be results for topic ' . $topicUri . ' from ' . $acropolisUrl;
 });
 
 $app->run();

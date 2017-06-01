@@ -122,8 +122,12 @@ var SearchResultsPanel = function (selector) {
   };
 
   that.loadResult = function (result) {
+    // create HTML element for the topic, including a data-api-uri attribute
+    // which enables scrolling back to it via the "back" button in the topic
+    // display
     var html = $(
-      '<div data-role="topic-box" class="panel panel-info">' +
+      '<div data-role="topic-box" class="panel panel-info" ' +
+      'data-api-uri="' + result.api_uri + '">' +
       '<div class="panel-body">' +
       '<h2>' +
       result.label +
@@ -133,7 +137,7 @@ var SearchResultsPanel = function (selector) {
       '</div>'
     );
 
-    // a click on the label link loads the topic
+    // a click loads the topic display
     html.on('click', function (e) {
       e.preventDefault();
       that.trigger('results:load-topic', result.api_uri);
@@ -144,6 +148,7 @@ var SearchResultsPanel = function (selector) {
     topicBoxContainerElement.append(html);
   };
 
+  // returns true if 1 or more topics have been loaded into the container
   that.hasResults = function () {
     var topicBoxes = topicBoxContainerElement.find('[data-role=topic-box]');
     return topicBoxes.length > 0;
@@ -175,13 +180,40 @@ var SearchResultsPanel = function (selector) {
     }
   };
 
+  // scroll to the search result which has a topic URI corresponding to
+  // topicUri; NB each search result HTML element is given a data-api-uri
+  // attribute when created to facilitate this
+  that.scrollTo = function (topicUri) {
+    var body = $(document.body);
+
+    var offsets = element.find('[data-api-uri="' + topicUri + '"]').offset()
+
+    // the scroll from the top is the offset of the element minus the padding
+    // on the top of the body
+    var bodyPadding = parseInt(body.css('padding-top'));
+    var top = offsets.top - bodyPadding;
+
+    body.animate({scrollTop: top}, {duration: 0});
+  };
+
   return that;
 };
 
 var TopicPanel = function (selector) {
   var that = $({});
 
+  var currentTopicUri = null;
+
   var element = $(selector);
+  var topicLoading = element.find('[data-role=topic-loading]');
+  var topicDisplay = element.find('[data-role=topic-display]');
+  var topicHeading = element.find('[data-role=topic-heading]');
+  var topicDescription = element.find('[data-role=topic-description]');
+  var backButton = element.find('[data-role=back-to-search-button]');
+
+  backButton.on('click', function () {
+    that.trigger('topic:back-to-search', currentTopicUri);
+  });
 
   that.setActive = function () {
     element.removeClass('ui-inactive');
@@ -191,6 +223,39 @@ var TopicPanel = function (selector) {
   that.setInactive = function () {
     element.removeClass('ui-active');
     element.addClass('ui-inactive');
+  };
+
+  that.topicLoading = function (bool) {
+    if (bool) {
+      topicLoading.removeClass('ui-inactive');
+      topicLoading.addClass('ui-active');
+
+      topicDisplay.removeClass('ui-active');
+      topicDisplay.addClass('ui-inactive');
+    }
+    else {
+      topicLoading.removeClass('ui-active');
+      topicLoading.addClass('ui-inactive');
+
+      topicDisplay.removeClass('ui-inactive');
+      topicDisplay.addClass('ui-active');
+    }
+  };
+
+  that.loadTopic = function (content) {
+    currentTopicUri = content.apiUri;
+
+    topicHeading.text(content.label);
+
+    if (content.description) {
+      topicDescription.text(content.description);
+      topicDescription.removeClass('ui-inactive');
+      topicDescription.addClass('ui-active');
+    }
+    else {
+      topicDescription.removeClass('ui-active');
+      topicDescription.addClass('ui-inactive');
+    }
   };
 
   return that;
@@ -225,6 +290,7 @@ var RESClient = function (endpoint) {
       dataType: 'json',
 
       success: function (content) {
+        content.apiUri = url;
         that.trigger('client:results', content);
       },
 
@@ -241,6 +307,25 @@ var RESClient = function (endpoint) {
 
     offset += limit;
     that.search(lastQuery);
+  };
+
+  that.topic = function (topicUri) {
+    console.log('loading topic ' + topicUri);
+
+    $.ajax({
+      url: topicUri,
+
+      dataType: 'json',
+
+      success: function (content) {
+        content.apiUri = topicUri;
+        that.trigger('client:topic', content);
+      },
+
+      error: function (err) {
+        that.trigger('client:error', err);
+      }
+    });
   };
 
   return that;
@@ -295,7 +380,19 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
     searchResultsPanel.setInactive();
 
     // show topic loading message
+    topicPanel.topicLoading(true);
 
+    // load the topic
+    client.topic(topicUri);
+  });
+
+  topicPanel.on('topic:back-to-search', function (e, topicUri) {
+    // hide the topic panel, show the search panel
+    topicPanel.setInactive();
+    searchResultsPanel.setActive();
+
+    // scroll to the indicated search result
+    searchResultsPanel.scrollTo(topicUri);
   });
 
   // handler for returned topic
@@ -304,10 +401,11 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
     topicPanel.setActive();
     searchResultsPanel.setInactive();
 
-    // hide topic loading message
-
-
     // load topic data into topic panel
+    topicPanel.loadTopic(content);
+
+    // hide topic loading message
+    topicPanel.topicLoading(false);
   });
 
   // handler for returned search results

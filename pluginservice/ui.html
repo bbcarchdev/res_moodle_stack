@@ -16,7 +16,7 @@
       }
       [data-role=topic-box] {
         width: 100%;
-        height: 150px;
+        height: 170px;
         margin-bottom: 10px;
         overflow: hidden;
         cursor: pointer;
@@ -76,18 +76,29 @@
       <div class="ui-inactive" data-role="search-results">
         <div data-role="topic-box-container">
         </div>
-        <p><button data-role="load-more-button" class="ui-inactive">Load more</button></p>
+        <p>
+          <button data-role="load-more-button" class="btn btn-default ui-inactive">
+            Load more
+          </button>
+        </p>
       </div>
     </div>
 
     <!-- topic area -->
     <div class="container ui-inactive" id="topic-panel">
-      <p>
-        <div style="background-color: blue; width: 100px; height: 25px; color: white;" data-role="back-button">
-          &lt; back to search results
-        </div>
-      </p>
-      <h2>Topic details</h2>
+      <div class="ui-inactive" data-role="topic-loading">
+        <p>Loading...</p>
+      </div>
+
+      <div class="ui-inactive" data-role="topic-display">
+        <p>
+          <button data-role="back-to-search-button" class="btn btn-default">
+            &lt; back to search results
+          </button>
+        </p>
+        <h2 data-role="topic-heading"></h2>
+        <p data-role="topic-description" class="ui-inactive"></p>
+      </div>
     </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->

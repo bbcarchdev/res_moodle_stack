@@ -8,17 +8,26 @@
     <link href="./css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-      #query-input {
-        width: 80%;
+      [data-role=query-input] {
+        width: 80% !important;
       }
-      #search-button {
-        width: 19%;
+      [data-role=search-button] {
+        width: 20%;
+      }
+      [data-role=topic-box] {
+        width: 100%;
+        height: 150px;
+        margin-bottom: 10px;
+        overflow: hidden;
+        cursor: pointer;
       }
       h1 {
         font-size: 24px;
       }
       h2 {
-        font-size: 18px;
+        font-size: 14px;
+        font-weight: bold;
+        margin-top: 8px;
       }
       .ui-active {
         display: block;
@@ -26,28 +35,58 @@
       .ui-inactive {
         display: none;
       }
+      body {
+        padding-top: 160px;
+      }
     </style>
   </head>
   <body>
-    <div class="container panel">
-      <h1>RES search</h1>
+    <div class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <h1>RES search</h1>
 
-      <form class="form-group form-inline" id="search-form">
-        <input type="text" class="form-control" id="query-input" name="query-input"
-               placeholder="Search RES for topics" value="">
-        <button id="search-button" class="btn btn-primary">Search</button>
-      </form>
+        <!-- search form -->
+        <form class="form-group form-inline" method="GET" id="search-form">
+          <p>
+            <input type="text" class="form-control" data-role="query-input" name="query-input"
+                   placeholder="Search RES for topics" value="">
+          </p>
+          <p>
+            <button data-role="search-button" class="btn btn-primary">Search</button>
+          </p>
+        </form>
+      </div>
     </div>
 
+
     <!-- search results area -->
-    <div class="container ui-active" id="search-results-panel">
-      <h2>Search results</h2>
-      <div style="background-color: red; width: 100px; height: 100px; color: white;" id="topic-box-no-id">Mock topic</div>
+    <div class="container" id="search-results-panel">
+      <div class="ui-active" data-role="no-search-yet">
+        <p>Please enter a search</p>
+      </div>
+
+      <div class="ui-inactive" data-role="search-in-progress">
+        <p>Loading...</p>
+      </div>
+
+      <div class="ui-inactive" data-role="no-search-results">
+        <p>No results for that search - please try again</p>
+      </div>
+
+      <div class="ui-inactive" data-role="search-results">
+        <div data-role="topic-box-container">
+        </div>
+        <p><button data-role="load-more-button" class="ui-inactive">Load more</button></p>
+      </div>
     </div>
 
     <!-- topic area -->
     <div class="container ui-inactive" id="topic-panel">
-      <p><div style="background-color: blue; width: 100px; height: 25px; color: white;" id="back-button">&lt; back to search</div></p>
+      <p>
+        <div style="background-color: blue; width: 100px; height: 25px; color: white;" data-role="back-button">
+          &lt; back to search results
+        </div>
+      </p>
       <h2>Topic details</h2>
     </div>
 
@@ -61,7 +100,8 @@
 
     <script type="text/javascript">
       $(document).ready(function() {
-        console.log('DOM ready');
+        var app = window.App('http://' + window.location.host + '/api/search');
+        app.init();
       });
     </script>
   </body>

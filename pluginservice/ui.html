@@ -21,13 +21,37 @@
         overflow: hidden;
         cursor: pointer;
       }
+      [data-role=topic-media] {
+        padding: 10px;
+        position: relative;
+        min-height: 80px;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      [data-role=topic-media-thumb] {
+        padding-right: 10px;
+        max-height: 200px;
+        width: auto;
+      }
+      [data-role=topic-media-label] {
+        position: absolute;
+        text-overflow: ellipsis;
+      }
+      [data-role=topic-media-select-button] {
+        position: absolute;
+        right: 10px;
+      }
       h1 {
-        font-size: 24px;
+        font-size: 160%;
       }
       h2 {
-        font-size: 14px;
-        font-weight: bold;
+        font-size: 140%;
+        font-weight: bolder;
         margin-top: 8px;
+      }
+      h3 {
+        font-size: 120%;
+        font-weight: bold;
       }
       .ui-active {
         display: block;
@@ -97,7 +121,23 @@
           </button>
         </p>
         <h2 data-role="topic-heading"></h2>
+
         <p data-role="topic-description" class="ui-inactive"></p>
+
+        <div class="ui-inactive" data-role="topic-players">
+          <h3>Playable media</h3>
+          <div data-role="topic-players-list"></div>
+        </div>
+
+        <div class="ui-inactive" data-role="topic-content">
+          <h3>Embeddable media</h3>
+          <div data-role="topic-content-list"></div>
+        </div>
+
+        <div class="ui-inactive" data-role="topic-pages">
+          <h3>Web pages</h3>
+          <div data-role="topic-pages-list"></div>
+        </div>
       </div>
     </div>
 

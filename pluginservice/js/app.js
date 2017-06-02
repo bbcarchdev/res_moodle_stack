@@ -205,15 +205,94 @@ var TopicPanel = function (selector) {
   var currentTopicUri = null;
 
   var element = $(selector);
+
   var topicLoading = element.find('[data-role=topic-loading]');
+
   var topicDisplay = element.find('[data-role=topic-display]');
   var topicHeading = element.find('[data-role=topic-heading]');
   var topicDescription = element.find('[data-role=topic-description]');
+  var topicPlayers = element.find('[data-role=topic-players]');
+  var topicContent = element.find('[data-role=topic-content]');
+  var topicPages = element.find('[data-role=topic-pages]');
+
   var backButton = element.find('[data-role=back-to-search-button]');
 
   backButton.on('click', function () {
     that.trigger('topic:back-to-search', currentTopicUri);
   });
+
+  // returns true if uri looks like it might be an image file
+  var isImage = function (uri) {
+    return uri && (uri.endsWith('.jpg') || uri.endsWith('.JPG') ||
+           uri.endsWith('.jpeg') || uri.endsWith('.JPEG') ||
+           uri.endsWith('.png') || uri.endsWith('.PNG') ||
+           uri.endsWith('.gif') || uri.endsWith('.GIF') ||
+           uri.endsWith('.bmp') || uri.endsWith('.BMP'));
+  };
+
+  // populate players, content or pages list and show the section if it
+  // has any elements in its list;
+  // if webpages is true, no thumbnail is shown
+  var populateSection = function (dataRole, items, webpages) {
+    webpages = !!webpages;
+
+    var section = element.find('[data-role=' + dataRole + ']');
+
+    if (items.length > 0) {
+      var list = section.find('[data-role=' + dataRole + '-list]');
+      list.empty();
+
+      for (var i = 0; i < items.length; i++) {
+        var listItem = '<div data-role="topic-media" class="panel panel-info">';
+
+        // thumbnail
+        if (!webpages) {
+          listItem += '<img data-role="topic-media-thumb" src="';
+
+          if (items[i].thumbnail) {
+            listItem += items[i].thumbnail;
+          }
+          else if (isImage(items[i].uri)) {
+            // if this looks like an image, try to load it
+            listItem += items[i].uri;
+          }
+          else {
+            // TODO generic thumbnail
+          }
+
+          listItem += '"> ';
+        }
+
+        // label
+        listItem += '<span data-role="topic-media-label">';
+        listItem += items[i].label;
+
+        // link to preview
+        var uri = items[i].uri;
+
+        // extract the domain to give a hint about the source
+        var domainRegex = new RegExp('https?:\/\/([^\/]+)');
+        var matches = domainRegex.exec(uri);
+        var domain = (matches ? matches[1] : 'open');
+
+        listItem += ' [<a href="' + uri + '" target="_blank">' + domain + '</a>]';
+
+        listItem += '</span>';
+
+        // select button
+        listItem += '<button data-role="topic-media-select-button" class="btn btn-default">Select</button>';
+
+        list.append(listItem);
+      }
+
+      section.removeClass('ui-inactive');
+      section.addClass('ui-active');
+    }
+    else {
+      section.removeClass('ui-active');
+      section.addClass('ui-inactive');
+    }
+  };
 
   that.setActive = function () {
     element.removeClass('ui-inactive');
@@ -243,6 +322,8 @@ var TopicPanel = function (selector) {
   };
 
   that.loadTopic = function (content) {
+    var i;
+
     currentTopicUri = content.apiUri;
 
     topicHeading.text(content.label);
@@ -256,6 +337,11 @@ var TopicPanel = function (selector) {
       topicDescription.removeClass('ui-active');
       topicDescription.addClass('ui-inactive');
     }
+
+    // show media
+    populateSection('topic-players', content.players);
+    populateSection('topic-content', content.content);
+    populateSection('topic-pages', content.pages, true);
   };
 
   return that;

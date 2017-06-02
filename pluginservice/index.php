@@ -243,7 +243,7 @@ $app->get('/api/topic', function(Request $request, Response $response) use($acro
         'label' => "{$topic['rdfs:label,dcterms:title']}",
         'description' => "{$topic['dcterms:description,rdfs:comment']}",
         'players' => NULL,
-        'contents' => NULL,
+        'content' => NULL,
         'pages' => NULL
     );
 
@@ -298,7 +298,7 @@ $app->get('/api/topic', function(Request $request, Response $response) use($acro
 
     // flatten out the arrays
     $result['players'] = flattenArray($players, 'uri');
-    $result['contents'] = flattenArray($contents, 'uri');
+    $result['content'] = flattenArray($contents, 'uri');
     $result['pages'] = flattenArray($pages, 'uri');
 
     return $response->withJson($result);

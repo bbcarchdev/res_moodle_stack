@@ -4,6 +4,7 @@ require_once(__DIR__ . '/vendor/autoload.php');
 use \Slim\App;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use \GuzzleHttp\Client as GuzzleHttpClient;
 
 use res\liblod\LOD;
 
@@ -71,6 +72,20 @@ function mergeArrays($arr1, $arr2)
 /* Extract media statements from a resource;
    returns
    array('players' => ..., 'contents' => ..., 'pages' => ...)
+   where each value of the array is itself an array
+   keyed by the URI of the media resource and with an array of data about
+   the media for its values, e.g.
+
+   'http://foo.bar/1/player' => array(
+     'source_uri' => '<Acropolis URI>',
+     'label' => 'label',
+     'height_px' => 999,
+     ...
+   )
+
+   These are eventually flattened out, so that if we get data about a
+   player URI from multiple places, they are merged together to form a
+   comprehensive array about that player.
  */
 function extractMedia($lodInstance)
 {
@@ -92,8 +107,8 @@ function extractMedia($lodInstance)
                     'label' => $label,
                     'description' => $description,
                     'thumbnail' => "{$lodInstance['schema:thumbnailUrl']}",
-                    'height_px' => "{$lodInstance['exif:height']}",
-                    'width_px' => "{$lodInstance['exif:width']}",
+                    'height_px' => intval("{$lodInstance['exif:height']}"),
+                    'width_px' => intval("{$lodInstance['exif:width']}"),
                     'date' => "{$lodInstance['dcterms:date']}",
                     'location' => "{$lodInstance['lio:location']}"
                 )
@@ -107,7 +122,8 @@ function extractMedia($lodInstance)
             array(
                 $content->value => array(
                     'source_uri' => $lodInstance->uri,
-                    'label' => $label
+                    'label' => $label,
+                    'description' => $description
                 )
             )
         );
@@ -119,7 +135,8 @@ function extractMedia($lodInstance)
             array(
                 $page->value => array(
                     'source_uri' => $lodInstance->uri,
-                    'label' => $label
+                    'label' => $label,
+                    'description' => $description
                 )
             )
         );
@@ -139,7 +156,8 @@ function extractMedia($lodInstance)
 
 // single HTML page: UI for searching Acropolis, showing search results, and
 // displaying a topic with its media
-$app->get('/', function (Request $request, Response $response) {
+$app->get('/', function (Request $request, Response $response)
+{
     $html = file_get_contents(__DIR__ . '/ui.html');
     $response->getBody()->write($html);
     return $response->withHeader('Content-Type', 'text/html')
@@ -148,7 +166,8 @@ $app->get('/', function (Request $request, Response $response) {
 
 // proxy for searches on Acropolis
 // call with /api/search?q=<search term>
-$app->get('/api/search', function(Request $request, Response $response) use($acropolisUrl) {
+$app->get('/api/search', function(Request $request, Response $response) use($acropolisUrl)
+{
     $query = $request->getQueryParam('q', $default=NULL);
     $limit = intval($request->getQueryParam('limit', $default=10));
     $offset = intval($request->getQueryParam('offset', $default=0));
@@ -227,7 +246,8 @@ $app->get('/api/search', function(Request $request, Response $response) use($acr
 // call with /api/topic?uri=<acropolis URI>;
 // as we fetch RDF about the media, we merge it with anything we already
 // know about that piece of media
-$app->get('/api/topic', function(Request $request, Response $response) use($acropolisUrl) {
+$app->get('/api/topic', function(Request $request, Response $response) use($acropolisUrl)
+{
     $topicUri = $request->getQueryParam('uri', $default=NULL);
 
     $lod = new LOD();
@@ -252,7 +272,7 @@ $app->get('/api/topic', function(Request $request, Response $response) use($acro
     $pages = array();
 
     // find resources which are owl:sameAs the topic and extract media from
-    // them
+    // them, as well as from the topic itself
     $usefulUris = array($topic->uri) + $lod->getSameAs($topic->uri);
 
     foreach($usefulUris as $usefulUri)
@@ -269,6 +289,9 @@ $app->get('/api/topic', function(Request $request, Response $response) use($acro
     foreach($topic['olo:slot'] as $oloSlot)
     {
         $slotResource = $lod[$oloSlot->value];
+
+        $sameasUris = array();
+
         foreach($slotResource['olo:item'] as $slotItem)
         {
             $slotItemResource = $lod->fetch($slotItem->value);
@@ -279,19 +302,21 @@ $app->get('/api/topic', function(Request $request, Response $response) use($acro
 
             // also get any resources which are sameAs the slot items, then
             // find their foaf:primaryTopics and get media for them
+            // (this is useful for finding bbcimages data)
             $sameasUris = $lod->getSameAs($slotItem->value);
-            foreach($sameasUris as $sameasUri)
-            {
-                $sameasResource = $lod[$sameasUri];
+        }
 
-                foreach($sameasResource['foaf:primaryTopic'] as $primaryTopic)
-                {
-                    $primaryTopicResource = $lod->fetch($primaryTopic->value);
-                    $media = extractMedia($primaryTopicResource);
-                    $players = mergeArrays($players, $media['players']);
-                    $contents = mergeArrays($contents, $media['contents']);
-                    $pages = mergeArrays($pages, $media['pages']);
-                }
+        foreach($sameasUris as $sameasUri)
+        {
+            $sameasResource = $lod[$sameasUri];
+
+            foreach($sameasResource['foaf:primaryTopic'] as $primaryTopic)
+            {
+                $primaryTopicResource = $lod->fetch($primaryTopic->value);
+                $media = extractMedia($primaryTopicResource);
+                $players = mergeArrays($players, $media['players']);
+                $contents = mergeArrays($contents, $media['contents']);
+                $pages = mergeArrays($pages, $media['pages']);
             }
         }
     }

@@ -1,3 +1,5 @@
+# NB you'll need to map "moodle" and "pluginservice" to 127.0.0.1 in your hosts
+# file for this to work; you'll also need to allow Moodle to use port 80
 version: '2'
 services:
   moodle:
@@ -8,18 +10,28 @@ services:
         - http_proxy=${http_proxy}
         - https_proxy=${http_proxy}
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "80:80"
+      - "443:443"
     links:
       - mariadb
-      - pluginservice
     environment:
-      - MYSQL_HOST=mariadb # should match the entry under links (above)
-      - PLUGINSERVICE_URL=http://localhost:8888 # should be accessible from user's browser
+      # should match the entry under links (above)
+      - MYSQL_HOST=mariadb
+
       - MYSQL_DATABASE=moodle
+
+      # should be accessible from user's browser as it's put into an iframe
+      - PLUGINSERVICE_URL=http://pluginservice:8888
+
       - MYSQL_USER=moodle
       - MYSQL_PASSWORD=moodle
-      - MOODLE_URL=http://localhost:8080
+
+      # this is the URL which other services should be able to reach Moodle at
+      # from within the docker context and should match the service name;
+      # NB this is passed by the Moodle plugin to the pluginservice as the
+      # callback URL and needs to be accessible by the browser (not just the
+      # the back-end services)
+      - MOODLE_URL=http://moodle
     volumes:
       - ./plugin:/var/www/html/repository/res
   mariadb:
@@ -45,6 +57,8 @@ services:
         - https_proxy=${http_proxy}
     ports:
       - "8888:80"
+    links:
+      - moodle
     environment:
       - ACROPOLIS_URL=http://acropolis.org.uk/
     volumes:

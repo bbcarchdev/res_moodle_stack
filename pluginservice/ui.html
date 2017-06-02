@@ -8,38 +8,49 @@
     <link href="./css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-      [data-role=query-input] {
-        width: 80% !important;
+      [data-role=query-input-container] {
+        width: 60%;
+      }
+      [data-role=query-input-container] .input-group {
+        width: 100%;
       }
       [data-role=search-button] {
-        width: 20%;
+        margin-left: 8px;
+        margin-top: -1px;
+        width: 18%;
       }
-      [data-role=topic-box] {
+      [data-role=result-box] {
         width: 100%;
-        height: 170px;
+        height: 166px;
         margin-bottom: 10px;
         overflow: hidden;
         cursor: pointer;
       }
+      [data-role=topic-back-area] {
+        margin-bottom: 16px;
+        margin-top: 8px;
+      }
       [data-role=topic-media] {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
         padding: 10px;
         position: relative;
         min-height: 80px;
         overflow: hidden;
-        white-space: nowrap;
       }
       [data-role=topic-media-thumb] {
         padding-right: 10px;
-        max-height: 200px;
-        width: auto;
+        max-width: 200px;
+        height: auto;
+        display: block;
       }
       [data-role=topic-media-label] {
-        position: absolute;
-        text-overflow: ellipsis;
+        display: block;
+        flex-grow: 3;
       }
       [data-role=topic-media-select-button] {
-        position: absolute;
-        right: 10px;
+        display: block;
       }
       h1 {
         font-size: 160%;
@@ -60,7 +71,7 @@
         display: none;
       }
       body {
-        padding-top: 160px;
+        padding-top: 120px;
       }
     </style>
   </head>
@@ -71,14 +82,17 @@
 
         <!-- search form -->
         <form class="form-group form-inline" method="GET" id="search-form">
-          <p>
-            <input type="text" class="form-control" data-role="query-input" name="query-input"
-                   placeholder="Search RES for topics" value="">
-          </p>
-          <p>
-            <button data-role="search-button" class="btn btn-primary">Search</button>
-          </p>
+            <div class="pull-left" data-role="query-input-container">
+                <div class="input-group">
+                  <input type="text" class="form-control" data-role="query-input" name="query-input"
+                         placeholder="Search RES for topics" value="">
+                </div>
+            </div>
+            <div style="margin-right:5px">
+              <button data-role="search-button" class="btn btn-primary">Search</button>
+            </div>
         </form>
+
       </div>
     </div>
 
@@ -98,7 +112,7 @@
       </div>
 
       <div class="ui-inactive" data-role="search-results">
-        <div data-role="topic-box-container">
+        <div data-role="result-box-container">
         </div>
         <p>
           <button data-role="load-more-button" class="btn btn-default ui-inactive">
@@ -115,8 +129,8 @@
       </div>
 
       <div class="ui-inactive" data-role="topic-display">
-        <p>
-          <button data-role="back-to-search-button" class="btn btn-default">
+        <p data-role="topic-back-area">
+          <button data-role="topic-back-to-search-button" class="btn btn-default">
             &lt; back to search results
           </button>
         </p>
@@ -147,11 +161,19 @@
     <!-- Include all compiled plugins -->
     <script src="./js/bootstrap.min.js"></script>
 
+    <!-- URI manipulation -->
+    <script src="./js/urijs.min.js"></script>
+
     <script src="./js/app.js"></script>
 
     <script type="text/javascript">
       $(document).ready(function() {
-        var app = window.App('http://' + window.location.host + '/api/search');
+        var searchEndpoint = 'http://' + window.location.host + '/api/';
+
+        // get the callback URL from the query params to this page
+        var callbackUrl = URI(window.location).search(true)['callback'];
+
+        var app = window.App(searchEndpoint, callbackUrl);
         app.init();
       });
     </script>

@@ -13,15 +13,19 @@ class repository_res extends repository {
     {
         parent::__construct($repositoryId, $context, $options, $readonly);
 
-        // TODO make this configurable
+        // TODO make this configurable in the plugin
         $this->pluginservice_url = getenv('PLUGINSERVICE_URL');
+
+        $this->moodle_url = getenv('MOODLE_URL');
     }
 
     public function get_listing($path=null, $page=null)
     {
         // load external filepicker
-        $pluginservice_url = $this->pluginservice_url;
-        error_log("Using plugin service at $pluginservice_url\n");
+        $callback_url = rtrim($this->moodle_url, '/');
+        $callback_url .= '/repository/res/callback.php?repo_id=' . $this->id;
+
+        $pluginservice_url = $this->pluginservice_url . '?callback=' . urlencode($callback_url);
 
         return array(
             'nologin' => TRUE,

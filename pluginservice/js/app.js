@@ -1,12 +1,12 @@
 // endpoint is the API endpoint on the pluginservice which proxies for RES
 // proper
-window.App = function (endpoint) {
-  return {
+window.App = function (endpoint, callbackUrl) {
+  var that = {
     init: function () {
       var searchForm = SearchForm('#search-form');
       var searchResultsPanel = SearchResultsPanel('#search-results-panel');
-      var topicPanel = TopicPanel('#topic-panel');
-      var client = RESClient(endpoint);
+      var topicPanel = TopicPanel('#topic-panel', callbackUrl);
+      var client = RESClient(endpoint, callbackUrl);
       var eventCoordinator = EventCoordinator(
         searchForm,
         searchResultsPanel,
@@ -15,6 +15,8 @@ window.App = function (endpoint) {
       );
     }
   };
+
+  return that;
 };
 
 var SearchForm = function (selector) {
@@ -50,7 +52,7 @@ var SearchResultsPanel = function (selector) {
   var element = $(selector);
   var noSearchYetElement = element.find('[data-role=no-search-yet]');
   var searchInProgressElement = element.find('[data-role=search-in-progress]');
-  var topicBoxContainerElement = element.find('[data-role=topic-box-container]');
+  var topicBoxContainerElement = element.find('[data-role=result-box-container]');
   var loadMoreButton = element.find('[data-role=load-more-button]');
 
   loadMoreButton.on('click', function () {
@@ -94,7 +96,7 @@ var SearchResultsPanel = function (selector) {
 
   that.searchInProgress = function (bool) {
     if (bool) {
-      // we've done a search, so we can hide the "please do a search" message
+      // we've done a search, so hide the "please do a search" message
       noSearchYetElement.removeClass('ui-active');
       noSearchYetElement.addClass('ui-inactive');
 
@@ -102,10 +104,12 @@ var SearchResultsPanel = function (selector) {
       loadMoreButton.removeClass('ui-active');
       loadMoreButton.addClass('ui-inactive');
 
+      // show search in progress
       searchInProgressElement.removeClass('ui-inactive');
       searchInProgressElement.addClass('ui-active');
     }
     else {
+      // hide search in progress
       searchInProgressElement.removeClass('ui-active');
       searchInProgressElement.addClass('ui-inactive');
     }
@@ -126,13 +130,13 @@ var SearchResultsPanel = function (selector) {
     // which enables scrolling back to it via the "back" button in the topic
     // display
     var html = $(
-      '<div data-role="topic-box" class="panel panel-info" ' +
+      '<div data-role="result-box" class="panel panel-info" ' +
       'data-api-uri="' + result.api_uri + '">' +
       '<div class="panel-body">' +
       '<h2>' +
       result.label +
       '</h2>' +
-      '<p>' + result.description + '</p>' +
+      '<p data-role="result-box-description">' + result.description + '</p>' +
       '</div>' +
       '</div>'
     );
@@ -148,9 +152,9 @@ var SearchResultsPanel = function (selector) {
     topicBoxContainerElement.append(html);
   };
 
-  // returns true if 1 or more topics have been loaded into the container
+  // returns true if one or more topics have been loaded into the container
   that.hasResults = function () {
-    var topicBoxes = topicBoxContainerElement.find('[data-role=topic-box]');
+    var topicBoxes = topicBoxContainerElement.find('[data-role=result-box]');
     return topicBoxes.length > 0;
   };
 
@@ -171,7 +175,7 @@ var SearchResultsPanel = function (selector) {
     }
 
     // count the number of results in the container and turn on "no results"
-    // area if appropriate; otherwise show the results area
+    // area if appropriate; otherwise show the results
     if (that.hasResults()) {
       that.setSearchResults();
     }
@@ -199,7 +203,8 @@ var SearchResultsPanel = function (selector) {
   return that;
 };
 
-var TopicPanel = function (selector) {
+// callbackUrl: if set, "Select" buttons are shown for selecting media objects
+var TopicPanel = function (selector, callbackUrl) {
   var that = $({});
 
   var currentTopicUri = null;
@@ -215,7 +220,7 @@ var TopicPanel = function (selector) {
   var topicContent = element.find('[data-role=topic-content]');
   var topicPages = element.find('[data-role=topic-pages]');
 
-  var backButton = element.find('[data-role=back-to-search-button]');
+  var backButton = element.find('[data-role=topic-back-to-search-button]');
 
   backButton.on('click', function () {
     that.trigger('topic:back-to-search', currentTopicUri);
@@ -243,18 +248,20 @@ var TopicPanel = function (selector) {
       list.empty();
 
       for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+
         var listItem = '<div data-role="topic-media" class="panel panel-info">';
 
         // thumbnail
         if (!webpages) {
           listItem += '<img data-role="topic-media-thumb" src="';
 
-          if (items[i].thumbnail) {
-            listItem += items[i].thumbnail;
+          if (item.thumbnail) {
+            listItem += item.thumbnail;
           }
-          else if (isImage(items[i].uri)) {
-            // if this looks like an image, try to load it
-            listItem += items[i].uri;
+          else if (isImage(item.uri)) {
+            // if this looks like an image, try to load it like a thumbnail
+            listItem += item.uri;
           }
           else {
             // TODO generic thumbnail
@@ -264,23 +271,36 @@ var TopicPanel = function (selector) {
         }
 
         // label
-        listItem += '<span data-role="topic-media-label">';
-        listItem += items[i].label;
+        listItem += '<div data-role="topic-media-label">';
+        listItem += item.label;
 
         // link to preview
-        var uri = items[i].uri;
+        var uri = item.uri;
 
-        // extract the domain to give a hint about the source
+        // extract the domain to give a hint about the source for the media
         var domainRegex = new RegExp('https?:\/\/([^\/]+)');
         var matches = domainRegex.exec(uri);
         var domain = (matches ? matches[1] : 'open');
 
         listItem += ' [<a href="' + uri + '" target="_blank">' + domain + '</a>]';
 
-        listItem += '</span>';
+        listItem += '</div>';
 
-        // select button
-        listItem += '<button data-role="topic-media-select-button" class="btn btn-default">Select</button>';
+        listItem = $(listItem);
+
+        // select button, only if callbackUrl is specified
+        if (callbackUrl) {
+          var btn = $(
+            '<div data-role="topic-media-select-button">' +
+            '<button class="btn btn-default">Select</button>' +
+            '</div>'
+          );
+          listItem.append(btn);
+
+          btn.on('click', function () {
+            that.trigger('topic:select', item);
+          });
+        }
 
         list.append(listItem);
       }
@@ -322,12 +342,19 @@ var TopicPanel = function (selector) {
   };
 
   that.loadTopic = function (content) {
+    // already have this topic loaded
+    if (currentTopicUri === content.apiUri) {
+      return;
+    }
+
     var i;
 
     currentTopicUri = content.apiUri;
 
+    // heading (label for the topic)
     topicHeading.text(content.label);
 
+    // description (of the topic)
     if (content.description) {
       topicDescription.text(content.description);
       topicDescription.removeClass('ui-inactive');
@@ -338,16 +365,59 @@ var TopicPanel = function (selector) {
       topicDescription.addClass('ui-inactive');
     }
 
-    // show media
+    // media
     populateSection('topic-players', content.players);
     populateSection('topic-content', content.content);
     populateSection('topic-pages', content.pages, true);
   };
 
+  /*
+   * Forward the browser to the callback URL with the item data encoded into
+   * its querystring
+   *
+   * mediaObj comes from the pluginservice API; see plugin/index.php,
+   * extractMedia() function for how this is put together by the API
+   *
+   * It will look like one of the following:
+   *
+   * {
+   *   'uri' : '<media URI>',
+   *   'source_uri' : '<acropolis URI>,
+   *   'label' : '<label>',
+   *   'description' : '<description>',
+   *   'thumbnail' : '<thumbnail URI>',
+   *   'height_px' : <height>,
+   *   'width_px' : <width>,
+   *   'date' : 'YYYY-MM-DD',
+   *   'location' : '<instance URI>'
+   * }
+   *
+   * or
+   *
+   * {
+   *   'uri' : '<media URI>',
+   *   'source_uri' : '<acropolis URI>,
+   *   'label' : '<label>',
+   *   'description' : '<description>'
+   * }
+   *
+   * The redirect goes to <callbackUrl>?repo_id=<repo ID>&media=<JSON-encoded media object>
+   */
+  that.forward = function (mediaObj) {
+    // encode mediaObj into the querystring
+    var mediaJson = JSON.stringify(mediaObj);
+    var fullCallbackUrl = URI(callbackUrl).query({media: mediaJson});
+
+    // forward to full callbackUrl
+    window.location.href = fullCallbackUrl.toString();
+  };
+
   return that;
 };
 
-var RESClient = function (endpoint) {
+// get data from Acropolis through the pluginservice proxy, which
+// converts it into friendly JSON
+var RESClient = function (endpoint, callbackUrl) {
   var that = $({});
 
   var offset = 0;
@@ -365,7 +435,7 @@ var RESClient = function (endpoint) {
   that.search = function (query) {
     lastQuery = query;
 
-    var url = endpoint + '?q=' + encodeURIComponent(query) +
+    var url = endpoint + 'search?q=' + encodeURIComponent(query) +
       '&offset=' + offset;
 
     console.log('search URL: ' + url);
@@ -376,6 +446,7 @@ var RESClient = function (endpoint) {
       dataType: 'json',
 
       success: function (content) {
+        // append the apiUri to the content item
         content.apiUri = url;
         that.trigger('client:results', content);
       },
@@ -417,7 +488,7 @@ var RESClient = function (endpoint) {
   return that;
 };
 
-var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, client) {
+var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, client, app) {
   // handler for clicks on the search button
   searchForm.on('search:send', function (e, query) {
     // return if there's no search term
@@ -472,6 +543,7 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
     client.topic(topicUri);
   });
 
+  // handler for "back to search" button on topic panel
   topicPanel.on('topic:back-to-search', function (e, topicUri) {
     // hide the topic panel, show the search panel
     topicPanel.setInactive();
@@ -481,7 +553,12 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
     searchResultsPanel.scrollTo(topicUri);
   });
 
-  // handler for returned topic
+  // handler for topic selected - forward back to Moodle
+  topicPanel.on('topic:select', function (e, mediaObj) {
+    topicPanel.forward(mediaObj);
+  });
+
+  // handler for topic returned from Acropolis
   client.on('client:topic', function (e, content) {
     // hide the search panel, show the topic panel
     topicPanel.setActive();
@@ -494,7 +571,7 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
     topicPanel.topicLoading(false);
   });
 
-  // handler for returned search results
+  // handler for search results returned from Acropolis
   client.on('client:results', function (e, content) {
     // re-enable the search form
     searchForm.enable();
@@ -508,5 +585,11 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
 
     // load results into the search results panel
     searchResultsPanel.loadResults(content);
+  });
+
+  // handler for client errors
+  client.on('client:error', function (e, err) {
+    console.error('Error while sending request');
+    console.error(err);
   });
 };

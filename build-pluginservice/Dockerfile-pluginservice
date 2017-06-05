@@ -18,9 +18,11 @@ RUN apt-get -y install curl vim netcat
 COPY ./foreground-apache.sh /etc/apache2/foreground-apache.sh
 COPY ./apache2.conf /etc/apache2/apache2.conf
 
-RUN chown -R www-data:www-data /var/www/html && \
-    rm /var/www/html/index.html && \
+RUN rm -Rf /var/www/html && \
     chmod +x /etc/apache2/foreground-apache.sh && \
     a2enmod rewrite
+
+COPY pluginservice /var/www/html
+RUN chown -R www-data:www-data /var/www/html
 
 ENTRYPOINT ["/etc/apache2/foreground-apache.sh"]

@@ -45,10 +45,15 @@ RUN cd /tmp && \
     tar zxf moodle.tgz && \
     mv /tmp/moodle/* /var/www/html/ && \
     rm /var/www/html/index.html && \
-    chown -R www-data:www-data /var/www/html && \
     chmod +x /etc/apache2/foreground-apache.sh && \
     chmod +x /run.sh && \
     rm /tmp/moodle.tgz
+
+# copy plugin files to appropriate location
+COPY plugin /var/www/html/repository/res
+
+# set permissions
+RUN chown -R www-data:www-data /var/www/html
 
 ENTRYPOINT ["/run.sh"]
 CMD ["/etc/apache2/foreground-apache.sh"]

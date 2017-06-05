@@ -3,6 +3,7 @@
 version: '2'
 services:
   moodle:
+    image: res-moodle-plugin_moodle
     build:
       context: ./build-moodle
       dockerfile: Dockerfile-moodle
@@ -15,26 +16,26 @@ services:
     links:
       - mariadb
     environment:
+      # should be accessible from user's browser as it's put into an iframe
+      - PLUGINSERVICE_URL=http://pluginservice:8888
+
       # should match the entry under links (above)
       - MYSQL_HOST=mariadb
 
       - MYSQL_DATABASE=moodle
-
-      # should be accessible from user's browser as it's put into an iframe
-      - PLUGINSERVICE_URL=http://pluginservice:8888
-
       - MYSQL_USER=moodle
       - MYSQL_PASSWORD=moodle
 
       # this is the URL which other services should be able to reach Moodle at
       # from within the docker context and should match the service name;
       # NB this is passed by the Moodle plugin to the pluginservice as the
-      # callback URL and needs to be accessible by the browser (not just the
+      # callback URL and also needs to be accessible by the browser (not just
       # the back-end services)
       - MOODLE_URL=http://moodle
     volumes:
-      - ./plugin:/var/www/html/repository/res
+      - ./build-moodle/plugin:/var/www/html/repository/res
   mariadb:
+    image: res-moodle-plugin_mariadb
     build:
       context: ./build-mariadb
       dockerfile: Dockerfile-mariadb
@@ -49,6 +50,7 @@ services:
       - MYSQL_PASSWORD=moodle
       - MYSQL_ROOT_PASSWORD=moodle
   pluginservice:
+    image: res-moodle-plugin_pluginservice
     build:
       context: ./build-pluginservice
       dockerfile: Dockerfile-pluginservice
@@ -56,10 +58,10 @@ services:
         - http_proxy=${http_proxy}
         - https_proxy=${http_proxy}
     ports:
-      - "8888:80"
+      - "8888:8888"
     links:
       - moodle
     environment:
       - ACROPOLIS_URL=http://acropolis.org.uk/
     volumes:
-      - ./pluginservice:/var/www/html/
+      - ./build-pluginservice/pluginservice:/var/www/html/

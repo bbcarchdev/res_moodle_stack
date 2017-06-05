@@ -297,9 +297,14 @@ var TopicPanel = function (selector, callbackUrl) {
           );
           listItem.append(btn);
 
-          btn.on('click', function () {
-            that.trigger('topic:select', item);
-          });
+          // work-around for adding handlers to UI elements inside a loop
+          var handler = (function (item) {
+            return function () {
+              that.trigger('topic:select', item);
+            }
+          })(item);
+
+          btn.on('click', handler);
         }
 
         list.append(listItem);

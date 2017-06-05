@@ -1,9 +1,19 @@
-# the following variables should be set for the build:
+# docker-compose config for deployment to AWS
+#
+# The following variables should be set for the build; the aws-task-def.sh
+# script makes it simple to set these for generating the task definition
+# to run on the AWS cluster:
+#
+# MOODLE_PLUGIN_IMAGE
+# MARIADB_IMAGE
+# PLUGINSERVICE_IMAGE
 # MYSQL_DATABASE
 # MYSQL_USER
 # MYSQL_PASSWORD
 # MYSQL_ROOT_PASSWORD
 # MOODLE_URL
+# PLUGINSERVICE_URL
+
 version: '2'
 services:
   moodle:
@@ -14,19 +24,39 @@ services:
     links:
       - mariadb
     environment:
+      # should be accessible from user's browser as it's used to load
+      # the pluginservice UI into an iframe
+      - PLUGINSERVICE_URL=${PLUGINSERVICE_URL}
+
+      # should match the entry under links (above)
       - MYSQL_HOST=mariadb
+
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MOODLE_URL=${MOODLE_URL} # host name of the Moodle AWS server
-    mem_limit: 512m
+
+      # this is the URL at which other services should be able to reach Moodle
+      # from within the docker context; it is also passed by the Moodle plugin
+      # to the pluginservice as the callback URL and needs to be accessible in
+      # a browser, too
+      - MOODLE_URL=${MOODLE_URL}
+    mem_limit: 484m
   mariadb:
     image: ${MARIADB_IMAGE}
-    expose:
-      - "3306"
+    ports:
+      - "3306:3306"
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-    mem_limit: 384m
+    mem_limit: 256m
+  pluginservice:
+    image: ${PLUGINSERVICE_IMAGE}
+    ports:
+      - "8888:8888"
+    links:
+      - moodle
+    environment:
+      - ACROPOLIS_URL=http://acropolis.org.uk/
+    mem_limit: 128m

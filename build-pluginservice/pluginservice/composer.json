@@ -16,6 +16,11 @@
             "email": "elliot.smith@bbc.co.uk"
         }
     ],
+    "autoload": {
+      "psr-4": {
+        "res\\libres\\": "lib/"
+      }
+    },
     "require": {
         "res/liblod": "@dev",
         "slim/slim": "^3.8"

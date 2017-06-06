@@ -5,150 +5,20 @@ use \Slim\App;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-use res\liblod\LOD;
+use res\libres\RESClient;
 
 $app = new \Slim\App();
 
 $acropolisUrl = getenv('ACROPOLIS_URL');
 
-/* Flatten an array with non-numeric keys and array values; the key is
-   added as a property $keyAttribute to the value array */
-function flattenArray($arr, $keyAttribute)
-{
-    $arrOut = array();
-
-    foreach($arr as $key => $arrValue)
-    {
-        $arrValue[$keyAttribute] = $key;
-        $arrOut[] = $arrValue;
-    }
-
-    return $arrOut;
-}
-
-/* Merge 2 arrays with non-numeric keys; where the same key occurs in both arrays,
-   the data for the value of that key in the resulting array is itself an
-   array, containing as many non-empty values from the combined arrays as
-   possible */
-function mergeArrays($arr1, $arr2)
-{
-    $arrOut = array();
-
-    foreach($arr1 as $key => $data)
-    {
-        if(array_key_exists($key, $arr2))
-        {
-            if(is_array($arr1[$key]) && is_array($arr2[$key]))
-            {
-                $arrOut[$key] = mergeArrays($arr1[$key], $arr2[$key]);
-            }
-            else if(empty($arr2[$key]))
-            {
-                $arrOut[$key] = $arr1[$key];
-            }
-            else
-            {
-                $arrOut[$key] = $arr2[$key];
-            }
-        }
-        else
-        {
-            $arrOut[$key] = $data;
-        }
-    }
-
-    foreach($arr2 as $key => $data)
-    {
-        if(!array_key_exists($key, $arr1))
-        {
-            $arrOut[$key] = $data;
-        }
-    }
-
-    return $arrOut;
-}
-
-/* Extract media statements from a resource;
-   returns
-   array('players' => ..., 'contents' => ..., 'pages' => ...)
-   where each value of the array is itself an array
-   keyed by the URI of the media resource and with an array of data about
-   the media for its values, e.g.
-
-   'http://foo.bar/1/player' => array(
-     'source_uri' => '<Acropolis URI>',
-     'label' => 'label',
-     'height_px' => 999,
-     ...
-   )
-
-   These are eventually flattened out, so that if we get data about a
-   player URI from multiple places, they are merged together to form a
-   comprehensive array about that player.
- */
-function extractMedia($lodInstance)
-{
-    $result = array(
-        'players' => array(),
-        'contents' => array(),
-        'pages' => array()
-    );
-
-    $label = "{$lodInstance['dcterms:title,rdfs:label']}";
-    $description = "{$lodInstance['dcterms:description,rdfs:comment']}";
-
-    foreach($lodInstance['mrss:player'] as $player)
-    {
-        $result['players'] = mergeArrays($result['players'],
-            array(
-                $player->value => array(
-                    'source_uri' => $lodInstance->uri,
-                    'label' => $label,
-                    'description' => $description,
-                    'thumbnail' => "{$lodInstance['schema:thumbnailUrl']}",
-                    'height_px' => intval("{$lodInstance['exif:height']}"),
-                    'width_px' => intval("{$lodInstance['exif:width']}"),
-                    'date' => "{$lodInstance['dcterms:date']}",
-                    'location' => "{$lodInstance['lio:location']}"
-                )
-            )
-        );
-    }
-
-    foreach($lodInstance['mrss:content'] as $content)
-    {
-        $result['contents'] = mergeArrays($result['contents'],
-            array(
-                $content->value => array(
-                    'source_uri' => $lodInstance->uri,
-                    'label' => $label,
-                    'description' => $description
-                )
-            )
-        );
-    }
-
-    foreach($lodInstance['foaf:page'] as $page)
-    {
-        $result['pages'] = mergeArrays($result['pages'],
-            array(
-                $page->value => array(
-                    'source_uri' => $lodInstance->uri,
-                    'label' => $label,
-                    'description' => $description
-                )
-            )
-        );
-    }
-
-    return $result;
-}
-
 /*
  * paths:
  *
- * - /?q=<search> -> perform a search and return list of matching topics
- * - /topic/<topic ID> -> return topic data, including list of related media;
+ * - /?callback=<callback URL> -> show URI for searching RES and selecting media
+ *   resources; when a resource is selected, the UI is redirected to
+ *   <callback URL>?media=<JSON-encoded representation of the selected resource>
+ * - /api/search?q=<search> -> perform a search and return list of matching topics
+ * - /api/topic/<topic ID> -> return topic data, including list of related media;
  *   when a piece of media is clicked, invoke a callback URL (if provided)
  *   with details of that piece of media (to populate Moodle file picker)
  */
@@ -171,159 +41,32 @@ $app->get('/api/search', function(Request $request, Response $response) use($acr
     $limit = intval($request->getQueryParam('limit', $default=10));
     $offset = intval($request->getQueryParam('offset', $default=0));
 
-    $result = array(
-        'acropolis_uri' => NULL,
-        'query' => $query,
-        'limit' => $limit,
-        'offset' => $offset,
-        'hasNext' => FALSE,
-        'items' => array()
-    );
+    $client = new RESClient($acropolisUrl);
 
-    if($query)
+    $result = $client->search($query, $limit, $offset);
+
+    // for each item in the results, construct a URI pointing at the plugin
+    // service API, in the form
+    // http://<plugin service domain and port>/api/topic?uri=<topic URI>
+    $baseApiUri = $request->getUri()->withPath('/api/topic');
+
+    foreach($result['items'] as $index => $item)
     {
-        $uri = $acropolisUrl .
-               '?q=' . urlencode($query) .
-               '&limit=' . urlencode($limit) .
-               '&offset=' . urlencode($offset) .
-               '&media=any';
-
-        $result['acropolis_uri'] = $uri;
-
-        $lod = new LOD();
-        $searchResultResource = $lod[$uri];
-
-        foreach($searchResultResource['olo:slot'] as $slot)
-        {
-            $slotUri = $slot->value;
-            $slotResource = $lod[$slotUri];
-
-            // if we can't resolve the slot resource, don't do anything
-            if(!$slotResource)
-            {
-                continue;
-            }
-
-            // make proxy links to /api/topic/ for each resource
-            foreach($slotResource['olo:item'] as $slotItem)
-            {
-                if($slotItem->isResource())
-                {
-                    $topic = $lod[$slotItem->value];
-
-                    $label = "{$topic['dcterms:title,rdfs:label']}";
-
-                    $isInfo = preg_match('|^Information about |', $label);
-
-                    // reject any foaf:Document resources whose label starts
-                    // with "Information about" - these are useless
-                    if($topic->hasType('foaf:Document') && $isInfo)
-                    {
-                        continue;
-                    }
-
-                    $topicApiUri = $request->getUri()->withPath('/api/topic');
-                    $topicApiUri = $topicApiUri->withQuery('uri=' . $topic->uri);
-
-                    $result['items'][] = array(
-                        'api_uri' => "$topicApiUri",
-                        'label' => $label,
-                        'description' => "{$topic['dcterms:description,rdfs:comment']}"
-                    );
-                }
-            }
-        }
+        $item['api_uri'] = "{$baseApiUri->withQuery('uri=' . $item['topic_uri'])}";
+        $result['items'][$index] = $item;
     }
-
-    // do we have more results? (yes if xhtml:next statement present)
-    $result['hasNext'] = !empty("{$searchResultResource['xhtml:next']}");
 
     return $response->withJson($result);
 });
 
 // proxy for topic requests to Acropolis
-// call with /api/topic?uri=<acropolis URI>;
-// as we fetch RDF about the media, we merge it with anything we already
-// know about that piece of media
 $app->get('/api/topic', function(Request $request, Response $response) use($acropolisUrl)
 {
     $topicUri = $request->getQueryParam('uri', $default=NULL);
 
-    $lod = new LOD();
-    $topic = $lod[$topicUri];
+    $client = new RESClient($acropolisUrl);
 
-    if(!$topic)
-    {
-        return $response->withJson(NULL);
-    }
-
-    $result = array(
-        'uri' => "{$topic->uri}",
-        'label' => "{$topic['rdfs:label,dcterms:title']}",
-        'description' => "{$topic['dcterms:description,rdfs:comment']}",
-        'players' => NULL,
-        'content' => NULL,
-        'pages' => NULL
-    );
-
-    $players = array();
-    $contents = array();
-    $pages = array();
-
-    // find resources which are owl:sameAs the topic and extract media from
-    // them, as well as from the topic itself
-    $usefulUris = array($topic->uri) + $lod->getSameAs($topic->uri);
-
-    foreach($usefulUris as $usefulUri)
-    {
-        $usefulResource = $lod[$usefulUri];
-        $media = extractMedia($usefulResource);
-        $players = mergeArrays($players, $media['players']);
-        $contents = mergeArrays($contents, $media['contents']);
-        $pages = mergeArrays($pages, $media['pages']);
-    }
-
-    // if we have olo:slots on the topic, fetch those and extract their media
-    // too
-    foreach($topic['olo:slot'] as $oloSlot)
-    {
-        $slotResource = $lod[$oloSlot->value];
-
-        $sameasUris = array();
-
-        foreach($slotResource['olo:item'] as $slotItem)
-        {
-            $slotItemResource = $lod->fetch($slotItem->value);
-            $media = extractMedia($slotItemResource);
-            $players = mergeArrays($players, $media['players']);
-            $contents = mergeArrays($contents, $media['contents']);
-            $pages = mergeArrays($pages, $media['pages']);
-
-            // also get any resources which are sameAs the slot items, then
-            // find their foaf:primaryTopics and get media for them
-            // (this is useful for finding bbcimages data)
-            $sameasUris = $lod->getSameAs($slotItem->value);
-        }
-
-        foreach($sameasUris as $sameasUri)
-        {
-            $sameasResource = $lod[$sameasUri];
-
-            foreach($sameasResource['foaf:primaryTopic'] as $primaryTopic)
-            {
-                $primaryTopicResource = $lod->fetch($primaryTopic->value);
-                $media = extractMedia($primaryTopicResource);
-                $players = mergeArrays($players, $media['players']);
-                $contents = mergeArrays($contents, $media['contents']);
-                $pages = mergeArrays($pages, $media['pages']);
-            }
-        }
-    }
-
-    // flatten out the arrays
-    $result['players'] = flattenArray($players, 'uri');
-    $result['content'] = flattenArray($contents, 'uri');
-    $result['pages'] = flattenArray($pages, 'uri');
+    $result = $client->topic($topicUri);
 
     return $response->withJson($result);
 });

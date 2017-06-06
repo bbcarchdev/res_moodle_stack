@@ -4,7 +4,6 @@ require_once(__DIR__ . '/vendor/autoload.php');
 use \Slim\App;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use \GuzzleHttp\Client as GuzzleHttpClient;
 
 use res\liblod\LOD;
 

@@ -6,15 +6,13 @@ require_once(__DIR__ . '/../vendor/autoload.php');
 use res\liblod\LOD;
 
 /* Flatten an array with non-numeric keys and array values; the key is
-   added as a property $keyAttribute to the value array;
-
-   e.g
+   added as a property $keyAttribute to the value array; e.g.
 
    $arr = array(
      'foo' => array('value' => 1),
      'bar' => array('value' => 2)
-   )
-   flattenArray($arr, 'name')
+   );
+   flattenArray($arr, 'name');
 
    returns
 
@@ -40,7 +38,7 @@ function flattenArray($arr, $keyAttribute)
 }
 
 /* Merge 2 arrays with non-numeric keys; where the same key occurs in both arrays,
-   the data for the value of that key in the resulting array is itself an
+   the data for the value of that key in the output array is itself an
    array, containing as many non-empty values from the combined arrays as
    possible, preferring the value from $arr2 if both are set */
 function mergeArrays($arr1, $arr2)
@@ -97,7 +95,7 @@ function mergeArrays($arr1, $arr2)
 
    These are eventually flattened out, so that if we get data about a
    player URI from multiple places, they are merged together to form a
-   comprehensive array about that player.
+   comprehensive array of data about that player.
  */
 function extractMedia($lodInstance)
 {
@@ -205,7 +203,6 @@ class RESClient
                     continue;
                 }
 
-                // make proxy links to /api/topic/ for each resource
                 foreach($slotResource['olo:item'] as $slotItem)
                 {
                     if($slotItem->isResource())
@@ -223,10 +220,12 @@ class RESClient
                             continue;
                         }
 
+                        $desc = "{$topic['dcterms:description,rdfs:comment']}";
+
                         $result['items'][] = array(
                             'topic_uri' => $topic->uri,
                             'label' => $label,
-                            'description' => "{$topic['dcterms:description,rdfs:comment']}"
+                            'description' => $desc
                         );
                     }
                 }

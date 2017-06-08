@@ -184,8 +184,7 @@ class RESClient
             $uri = $this->acropolisUrl .
                    '?q=' . urlencode($query) .
                    '&limit=' . urlencode($limit) .
-                   '&offset=' . urlencode($offset) .
-                   '&media=any';
+                   '&offset=' . urlencode($offset);
 
             $result['acropolis_uri'] = $uri;
 

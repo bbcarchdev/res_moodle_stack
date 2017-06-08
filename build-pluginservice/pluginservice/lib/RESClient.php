@@ -309,6 +309,9 @@ class RESClient
 
                 foreach($sameasResource['foaf:primaryTopic'] as $primaryTopic)
                 {
+                    // NB this fetch is necessary to get schema:thumbnailUrl
+                    // and other predicates not saved by Acropolis from
+                    // their original source
                     $primaryTopicResource = $lod->fetch($primaryTopic->value);
                     $media = extractMedia($primaryTopicResource);
                     $players = mergeArrays($players, $media['players']);

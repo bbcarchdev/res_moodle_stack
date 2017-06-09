@@ -274,14 +274,13 @@ var TopicPanel = function (selector, callbackUrl) {
         listItem += '<div data-role="topic-media-label">';
         listItem += item.label;
 
-        // link to preview
-        var uri = item.uri;
-
         // extract the domain to give a hint about the source for the media
+        var uri = item.uri;
         var domainRegex = new RegExp('https?:\/\/([^\/]+)');
         var matches = domainRegex.exec(uri);
-        var domain = (matches ? matches[1] : 'open');
+        var domain = (matches ? matches[1] : 'preview');
 
+        // link to preview
         listItem += ' [<a href="' + uri + '" target="_blank">' + domain + '</a>]';
 
         listItem += '</div>';

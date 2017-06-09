@@ -4,155 +4,74 @@ namespace res\libres;
 require_once(__DIR__ . '/../vendor/autoload.php');
 
 use res\liblod\LOD;
+use res\liblod\Rdf;
 
-/* Flatten an array with non-numeric keys and array values; the key is
-   added as a property $keyAttribute to the value array; e.g.
-
-   $arr = array(
-     'foo' => array('value' => 1),
-     'bar' => array('value' => 2)
-   );
-   flattenArray($arr, 'name');
-
-   returns
-
-   array(
-     array('name' => 'foo', 'value' => 1),
-     array('name' => 'bar', 'value' => 2)
-   )
-
-   (i.e. the keys of the original array have become 'name' properties in each
-   member of the output array)
-   */
-function flattenArray($arr, $keyAttribute)
+function isVideo($lodinstance)
 {
-    $arrOut = array();
-
-    foreach($arr as $key => $arrValue)
-    {
-        $arrValue[$keyAttribute] = $key;
-        $arrOut[] = $arrValue;
-    }
-
-    return $arrOut;
-}
-
-/* Merge 2 arrays with non-numeric keys; where the same key occurs in both arrays,
-   the data for the value of that key in the output array is itself an
-   array, containing as many non-empty values from the combined arrays as
-   possible, preferring the value from $arr2 if both are set */
-function mergeArrays($arr1, $arr2)
-{
-    $arrOut = array();
-
-    foreach($arr1 as $key => $data)
-    {
-        if(array_key_exists($key, $arr2))
-        {
-            if(is_array($arr1[$key]) && is_array($arr2[$key]))
-            {
-                $arrOut[$key] = mergeArrays($arr1[$key], $arr2[$key]);
-            }
-            else if(empty($arr2[$key]))
-            {
-                $arrOut[$key] = $arr1[$key];
-            }
-            else
-            {
-                $arrOut[$key] = $arr2[$key];
-            }
-        }
-        else
-        {
-            $arrOut[$key] = $data;
-        }
-    }
-
-    foreach($arr2 as $key => $data)
-    {
-        if(!array_key_exists($key, $arr1))
-        {
-            $arrOut[$key] = $data;
-        }
-    }
-
-    return $arrOut;
-}
-
-/* Extract media statements from a resource;
-   returns
-   array('players' => ..., 'contents' => ..., 'pages' => ...)
-   where each value of the array is itself an array
-   keyed by the URI of the media resource and with an array of data about
-   the media for its values, e.g.
-
-   'http://foo.bar/1/player' => array(
-     'source_uri' => '<Acropolis URI>',
-     'label' => 'label',
-     'height_px' => 999,
-     ...
-   )
-
-   These are eventually flattened out, so that if we get data about a
-   player URI from multiple places, they are merged together to form a
-   comprehensive array of data about that player.
- */
-function extractMedia($lodInstance)
-{
-    $result = array(
-        'players' => array(),
-        'contents' => array(),
-        'pages' => array()
+    return $lodinstance->hasType(
+        'dcmitype:MovingImage',
+        'schema:Movie',
+        'schema:VideoObject',
+        'po:TVContent'
     );
+}
 
-    $label = "{$lodInstance['dcterms:title,rdfs:label']}";
-    $description = "{$lodInstance['dcterms:description,rdfs:comment']}";
+function isAudio($lodinstance)
+{
+    return $lodinstance->hasType(
+        'dcmitype:Sound',
+        'schema:AudioObject',
+        'po:RadioContent'
+    );
+}
 
-    foreach($lodInstance['mrss:player'] as $player)
+function isImage($lodinstance)
+{
+    return $lodinstance->hasType(
+        'dcmitype:StillImage',
+        'schema:Photograph',
+        'schema:ImageObject',
+        'foaf:Image'
+    );
+}
+
+function isText($lodinstance)
+{
+    return $lodinstance->hasType(
+        'dcmitype:Text'
+    );
+}
+
+/* returns media type if the LODInstance $lodinstance has rdf:type <media type>,
+   where <media type> is a recognisable media RDF type; NULL otherwise;
+   media type is one of
+   'audio', 'video', 'image', 'text' */
+function getMediaType($lodinstance)
+{
+    // early return if $lodinstance is not set
+    if(empty($lodinstance))
     {
-        $result['players'] = mergeArrays($result['players'],
-            array(
-                $player->value => array(
-                    'source_uri' => $lodInstance->uri,
-                    'label' => $label,
-                    'description' => $description,
-                    'thumbnail' => "{$lodInstance['schema:thumbnailUrl']}",
-                    'height_px' => intval("{$lodInstance['exif:height']}"),
-                    'width_px' => intval("{$lodInstance['exif:width']}"),
-                    'date' => "{$lodInstance['dcterms:date']}",
-                    'location' => "{$lodInstance['lio:location']}"
-                )
-            )
-        );
+        return NULL;
     }
 
-    foreach($lodInstance['mrss:content'] as $content)
+    if(isVideo($lodinstance))
     {
-        $result['contents'] = mergeArrays($result['contents'],
-            array(
-                $content->value => array(
-                    'source_uri' => $lodInstance->uri,
-                    'label' => $label,
-                    'description' => $description
-                )
-            )
-        );
+        return 'video';
+    }
+    else if(isAudio($lodinstance))
+    {
+        return 'audio';
+    }
+    else if(isImage($lodinstance))
+    {
+        return 'image';
+    }
+    else if(isText($lodinstance))
+    {
+        return 'text';
     }
 
-    foreach($lodInstance['foaf:page'] as $page)
-    {
-        $result['pages'] = mergeArrays($result['pages'],
-            array(
-                $page->value => array(
-                    'source_uri' => $lodInstance->uri,
-                    'label' => $label,
-                    'description' => $description
-                )
-            )
-        );
-    }
-
-    return $result;
+    return NULL;
 }
 
 /* Client for RES */
@@ -167,9 +86,16 @@ class RESClient
 
     /*
      * Search RES for topics with related media.
+     * $media is one of 'audio', 'collection', 'dataset', 'image',
+     * 'interactive', 'software', 'text' or 'video' (default: 'image')
      */
-    public function search($query, $limit=10, $offset=0)
+    public function search($query, $media, $limit=10, $offset=0)
     {
+        if(empty($media))
+        {
+            $media = 'image';
+        }
+
         $result = array(
             'acropolis_uri' => NULL,
             'query' => $query,
@@ -183,6 +109,7 @@ class RESClient
         {
             $uri = $this->acropolisUrl .
                    '?q=' . urlencode($query) .
+                   '&media=' . urlencode($media) .
                    '&limit=' . urlencode($limit) .
                    '&offset=' . urlencode($offset);
 
@@ -210,10 +137,9 @@ class RESClient
 
                         $label = "{$topic['dcterms:title,rdfs:label']}";
 
-                        $isInfo = preg_match('|^Information about |', $label);
-
                         // reject any foaf:Document resources whose label starts
                         // with "Information about" - these are useless
+                        $isInfo = preg_match('|^Information about |', $label);
                         if($topic->hasType('foaf:Document') && $isInfo)
                         {
                             continue;
@@ -238,94 +164,121 @@ class RESClient
     }
 
     /*
-     * Fetch data about a single topic URI and collect any related media
-     * we know about.
+     * Fetch data about a single proxy URI and its olo:slot resources.
+     * Convert into an associative array about the proxy and its media.
+     * format: 'json' (return convenient JSON representation) or 'rdf'
+     * (get raw RDF for all relevant resources)
      *
-     * As we fetch RDF about the media, merge it with anything we already
-     * know about the media.
+     * NB this has to follow an inference chain and do lots of fetches to
+     * get enough data to populate the Moodle UI properly.
      */
-    public function topic($topicUri)
+    public function proxy($proxyUri, $format='json')
     {
         $lod = new LOD();
-        $topic = $lod[$topicUri];
+        $proxy = $lod->fetch($proxyUri);
 
-        if(!$topic)
+        if(!$proxy)
         {
-            return NULL;
+            return ($format === 'json' ? NULL : '');
         }
 
-        $result = array(
-            'uri' => "{$topic->uri}",
-            'label' => "{$topic['rdfs:label,dcterms:title']}",
-            'description' => "{$topic['dcterms:description,rdfs:comment']}",
-            'players' => NULL,
-            'content' => NULL,
-            'pages' => NULL
-        );
+        $proxyLabel = "{$proxy['rdfs:label,dcterms:title']}";
+        $proxyDescription = "{$proxy['dcterms:description,rdfs:comment,po:synopsis']}";
 
-        $players = array();
-        $contents = array();
-        $pages = array();
+        // find all the resources which could be useful;
+        // if the proxy has olo:slot resources, we want their olo:items
+        $slotItemUris = array();
+        $slotResources = $proxy['olo:slot'];
 
-        // find resources which are owl:sameAs the topic and extract media from
-        // them, as well as from the topic itself
-        $usefulUris = array($topic->uri) + $lod->getSameAs($topic->uri);
-
-        foreach($usefulUris as $usefulUri)
+        foreach($slotResources as $slotResource)
         {
-            $usefulResource = $lod[$usefulUri];
-            $media = extractMedia($usefulResource);
-            $players = mergeArrays($players, $media['players']);
-            $contents = mergeArrays($contents, $media['contents']);
-            $pages = mergeArrays($pages, $media['pages']);
+            $slotResourceUri = "$slotResource";
+            $slotResource = $lod[$slotResourceUri];
+            $slotItemUris[] = "{$slotResource['olo:item']}";
         }
 
-        // if we have olo:slots on the topic, fetch those and extract their media
-        // too
-        foreach($topic['olo:slot'] as $oloSlot)
+        // fetch the slot resources; we need these to be able to get the
+        // players
+        foreach($slotItemUris as $uriToFetch)
         {
-            $slotResource = $lod[$oloSlot->value];
+            $lod->fetch($uriToFetch);
+        }
 
-            $sameasUris = array();
+        // if the format is RDF, return the whole LOD object as Turtle
+        // (mostly useful for dev)
+        if($format === 'rdf')
+        {
+            return Rdf::toTurtle($lod);
+        }
+        else
+        {
+            // convert relevant resources to JSON
+            $pages = array();
+            $players = array();
+            $content = array();
 
-            foreach($slotResource['olo:item'] as $slotItem)
+            // extract web pages, only from the proxy itself
+            foreach($proxy['foaf:page'] as $page)
             {
-                $slotItemResource = $lod->fetch($slotItem->value);
-                $media = extractMedia($slotItemResource);
-                $players = mergeArrays($players, $media['players']);
-                $contents = mergeArrays($contents, $media['contents']);
-                $pages = mergeArrays($pages, $media['pages']);
+                $pageUri = "{$page->value}";
 
-                // also get any resources which are sameAs the slot items
-                $sameasUris = $lod->getSameAs($slotItem->value);
-            }
-
-            // find foaf:primaryTopics of any resources which are sameAs the
-            // slot items and fetch RDF for them (this is useful for finding
-            // bbcimages data)
-            foreach($sameasUris as $sameasUri)
-            {
-                $sameasResource = $lod[$sameasUri];
-
-                foreach($sameasResource['foaf:primaryTopic'] as $primaryTopic)
+                // ignore non-HTTP URIs
+                if(substr($pageUri, 0, 4) === 'http')
                 {
-                    // NB this fetch is necessary to get schema:thumbnailUrl
-                    // and other predicates not saved by Acropolis from
-                    // their original source
-                    $primaryTopicResource = $lod->fetch($primaryTopic->value);
-                    $media = extractMedia($primaryTopicResource);
-                    $players = mergeArrays($players, $media['players']);
-                    $contents = mergeArrays($contents, $media['contents']);
-                    $pages = mergeArrays($pages, $media['pages']);
+                    $pages[] = array(
+                        'source_uri' => $proxyUri,
+                        'uri' => $pageUri,
+                        'label' => $proxyLabel,
+                        'mediaType' => 'web page'
+                    );
                 }
             }
+
+            // extract players and content via olo:slot->olo:item
+            foreach($slotItemUris as $slotItemUri)
+            {
+                // retrieve the URIs of the media which are same as the slot item
+                // ($slotItemUri is a RES proxy URI, so this gives us the URI
+                // of the original resource)
+                $possibleMediaUris = $lod->getSameAs($slotItemUri);
+
+                foreach($possibleMediaUris as $possibleMediaUri)
+                {
+                    // we don't get any date statements unless we fetch the
+                    // resource; but fetching it serially is too slow; so for
+                    // now, just resolve using the graph we already have
+                    $resource = $lod[$possibleMediaUri];
+
+                    if(empty($resource))
+                    {
+                        continue;
+                    }
+
+                    // if it's got an mrss:player or mrss:content, we want it
+                    foreach($resource['mrss:player,mrss:content'] as $mediaUri)
+                    {
+                        $players[] = array(
+                            'source_uri' => $possibleMediaUri,
+                            'uri' => "$mediaUri",
+                            'mediaType' => getMediaType($resource),
+                            'label' => "{$resource['dcterms:title,rdfs:label']}",
+                            'description' => "{$resource['dcterms:description,rdfs:comment']}",
+                            'thumbnail' => "{$resource['schema:thumbnailUrl']}",
+                            'date' => "{$resource['dcterms:date']}",
+                            'location' => "{$resource['lio:location']}"
+                        );
+                    }
+                }
+            }
+
+            return array(
+                'uri' => "$proxyUri",
+                'label' => $proxyLabel,
+                'description' => $proxyDescription,
+                'players' => $players,
+                'content' => $content,
+                'pages' => $pages
+            );
         }
-
-        // flatten out the arrays
-        $result['players'] = flattenArray($players, 'uri');
-        $result['content'] = flattenArray($contents, 'uri');
-        $result['pages'] = flattenArray($pages, 'uri');
-
-        return $result;
     }
 }

@@ -4,6 +4,7 @@ require_once(__DIR__ . '/vendor/autoload.php');
 use \Slim\App;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use GuzzleHttp\Psr7\stream_for;
 
 use res\libres\RESClient;
 
@@ -38,12 +39,13 @@ $app->get('/', function (Request $request, Response $response)
 $app->get('/api/search', function(Request $request, Response $response) use($acropolisUrl)
 {
     $query = $request->getQueryParam('q', $default=NULL);
+    $media = $request->getQueryParam('media', $default=NULL);
     $limit = intval($request->getQueryParam('limit', $default=10));
     $offset = intval($request->getQueryParam('offset', $default=0));
 
     $client = new RESClient($acropolisUrl);
 
-    $result = $client->search($query, $limit, $offset);
+    $result = $client->search($query, $media, $limit, $offset);
 
     // for each item in the results, construct a URI pointing at the plugin
     // service API, in the form
@@ -63,12 +65,22 @@ $app->get('/api/search', function(Request $request, Response $response) use($acr
 $app->get('/api/topic', function(Request $request, Response $response) use($acropolisUrl)
 {
     $topicUri = $request->getQueryParam('uri', $default=NULL);
+    $format = $request->getQueryParam('format', $default='json');
 
     $client = new RESClient($acropolisUrl);
 
-    $result = $client->topic($topicUri);
+    $result = $client->proxy($topicUri, $format);
 
-    return $response->withJson($result);
+    if($format === 'json')
+    {
+        return $response->withJson($result);
+    }
+    else
+    {
+        $stream = GuzzleHttp\Psr7\stream_for($result);
+        return $response->withBody($stream)
+                        ->withHeader('Content-Type', 'text/turtle');
+    }
 });
 
 $app->run();

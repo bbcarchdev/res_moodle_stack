@@ -23,7 +23,7 @@ var SearchForm = function (selector) {
   var that = $({});
 
   var element = $(selector);
-  var input = element.find('[data-role=query-input]');
+  var input = element.find('[data-role=search-input]');
   var button = element.find('[data-role=search-button]');
 
   button.on('click', function (e) {

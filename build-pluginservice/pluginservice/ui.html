@@ -8,10 +8,10 @@
     <link href="./css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-      [data-role=query-input-container] {
+      [data-role=search-input-container] {
         width: 60%;
       }
-      [data-role=query-input-container] .input-group {
+      [data-role=search-input-container] .input-group {
         width: 100%;
       }
       [data-role=search-button] {
@@ -78,13 +78,13 @@
   <body>
     <div class="navbar navbar-default navbar-fixed-top">
       <div class="container">
-        <h1>RES search</h1>
+        <h1>RES Search</h1>
 
         <!-- search form -->
         <form class="form-group form-inline" method="GET" id="search-form">
-            <div class="pull-left" data-role="query-input-container">
+            <div class="pull-left" data-role="search-input-container">
                 <div class="input-group">
-                  <input type="text" class="form-control" data-role="query-input" name="query-input"
+                  <input type="text" class="form-control" data-role="search-input" name="search-input"
                          placeholder="Search RES for topics" value="">
                 </div>
             </div>

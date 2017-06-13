@@ -253,8 +253,9 @@ var TopicPanel = function (selector, callbackUrl) {
         var listItem = '<div data-role="topic-media" class="panel panel-info">';
 
         // thumbnail
-        if (!webpages) {
-          listItem += '<img data-role="topic-media-thumb" src="';
+        if (!webpages && (item.thumbnail || isImage(item.uri))) {
+          listItem += '<div data-role="topic-media-thumb-container">' +
+                      '<img data-role="topic-media-thumb" src="';
 
           if (item.thumbnail) {
             listItem += item.thumbnail;
@@ -263,11 +264,8 @@ var TopicPanel = function (selector, callbackUrl) {
             // if this looks like an image, try to load it like a thumbnail
             listItem += item.uri;
           }
-          else {
-            // TODO generic thumbnail
-          }
 
-          listItem += '"> ';
+          listItem += '"></div>';
         }
 
         // label
@@ -358,8 +356,6 @@ var TopicPanel = function (selector, callbackUrl) {
     if (currentTopicUri === content.apiUri) {
       return;
     }
-
-    var i;
 
     currentTopicUri = content.apiUri;
 

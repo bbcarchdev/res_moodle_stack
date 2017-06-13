@@ -280,8 +280,16 @@ var TopicPanel = function (selector, callbackUrl) {
         var matches = domainRegex.exec(uri);
         var domain = (matches ? matches[1] : 'preview');
 
-        // link to preview
-        listItem += ' [<a href="' + uri + '" target="_blank">' + domain + '</a>]';
+        // link to preview with media type if available
+        listItem += ' [';
+
+        if (item.mediaType) {
+          listItem += item.mediaType + ' from ';
+        }
+
+        listItem += '<a href="' + uri + '" target="_blank">' +
+                    domain +
+                    '</a>]';
 
         listItem += '</div>';
 

@@ -39,7 +39,7 @@ $app->get('/', function (Request $request, Response $response)
 $app->get('/api/search', function(Request $request, Response $response) use($acropolisUrl)
 {
     $query = $request->getQueryParam('q', $default=NULL);
-    $media = $request->getQueryParam('media', $default=NULL);
+    $media = $request->getQueryParam('media', $default='image');
     $limit = intval($request->getQueryParam('limit', $default=10));
     $offset = intval($request->getQueryParam('offset', $default=0));
 
@@ -54,7 +54,8 @@ $app->get('/api/search', function(Request $request, Response $response) use($acr
 
     foreach($result['items'] as $index => $item)
     {
-        $item['api_uri'] = "{$baseApiUri->withQuery('uri=' . $item['topic_uri'])}";
+        $querystring = 'uri=' . $item['topic_uri'] . '&media=' . $media;
+        $item['api_uri'] = "{$baseApiUri->withQuery($querystring)}";
         $result['items'][$index] = $item;
     }
 
@@ -65,11 +66,12 @@ $app->get('/api/search', function(Request $request, Response $response) use($acr
 $app->get('/api/topic', function(Request $request, Response $response) use($acropolisUrl)
 {
     $topicUri = $request->getQueryParam('uri', $default=NULL);
+    $media = $request->getQueryParam('media', $default='image');
     $format = $request->getQueryParam('format', $default='json');
 
     $client = new RESClient($acropolisUrl);
 
-    $result = $client->proxy($topicUri, $format);
+    $result = $client->proxy($topicUri, $media, $format);
 
     if($format === 'json')
     {

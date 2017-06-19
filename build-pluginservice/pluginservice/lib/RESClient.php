@@ -86,16 +86,10 @@ class RESClient
 
     /*
      * Search RES for topics with related media.
-     * $media is one of 'audio', 'collection', 'dataset', 'image',
-     * 'interactive', 'software', 'text' or 'video' (default: 'image')
+     * $media is one of 'audio', 'image', 'text' or 'video'
      */
     public function search($query, $media, $limit=10, $offset=0)
     {
-        if(empty($media))
-        {
-            $media = 'image';
-        }
-
         $result = array(
             'acropolis_uri' => NULL,
             'query' => $query,
@@ -166,13 +160,14 @@ class RESClient
     /*
      * Fetch data about a single proxy URI and its olo:slot resources.
      * Convert into an associative array about the proxy and its media.
-     * format: 'json' (return convenient JSON representation) or 'rdf'
+     * $media: one of 'image', 'video', 'text' or 'audio'
+     * $format: 'json' (return convenient JSON representation) or 'rdf'
      * (get raw RDF for all relevant resources)
      *
      * NB this has to follow an inference chain and do lots of fetches to
      * get enough data to populate the Moodle UI properly.
      */
-    public function proxy($proxyUri, $format='json')
+    public function proxy($proxyUri, $media, $format='json')
     {
         $lod = new LOD();
         $proxy = $lod->fetch($proxyUri);
@@ -215,19 +210,22 @@ class RESClient
             $content = array();
 
             // extract web pages, only from the proxy itself
-            foreach($proxy['foaf:page'] as $page)
+            if($media === 'text')
             {
-                $pageUri = "{$page->value}";
-
-                // ignore non-HTTP URIs
-                if(substr($pageUri, 0, 4) === 'http')
+                foreach($proxy['foaf:page'] as $page)
                 {
-                    $pages[] = array(
-                        'source_uri' => $proxyUri,
-                        'uri' => $pageUri,
-                        'label' => $proxyLabel,
-                        'mediaType' => 'web page'
-                    );
+                    $pageUri = "{$page->value}";
+
+                    // ignore non-HTTP URIs
+                    if(substr($pageUri, 0, 4) === 'http')
+                    {
+                        $pages[] = array(
+                            'source_uri' => $proxyUri,
+                            'uri' => $pageUri,
+                            'label' => $proxyLabel,
+                            'mediaType' => 'web page'
+                        );
+                    }
                 }
             }
 
@@ -251,13 +249,22 @@ class RESClient
                         continue;
                     }
 
-                    // if it's got an mrss:player or mrss:content, we want it
+                    // if it's got an mrss:player or mrss:content, we want it;
+                    // but we reject any resources which don't match the media
+                    // type filter (if set)
                     foreach($resource['mrss:player,mrss:content'] as $mediaUri)
                     {
+                        $mediaType = getMediaType($resource);
+
+                        if($mediaType && ($mediaType !== $media))
+                        {
+                            continue;
+                        }
+
                         $players[] = array(
                             'source_uri' => $possibleMediaUri,
                             'uri' => "$mediaUri",
-                            'mediaType' => getMediaType($resource),
+                            'mediaType' => $mediaType,
                             'label' => "{$resource['dcterms:title,rdfs:label']}",
                             'description' => "{$resource['dcterms:description,rdfs:comment']}",
                             'thumbnail' => "{$resource['schema:thumbnailUrl']}",
@@ -272,6 +279,7 @@ class RESClient
                 'uri' => "$proxyUri",
                 'label' => $proxyLabel,
                 'description' => $proxyDescription,
+                'media' => $media,
                 'players' => $players,
                 'content' => $content,
                 'pages' => $pages

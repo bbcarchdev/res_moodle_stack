@@ -42,12 +42,14 @@ var SearchForm = function (selector) {
   that.disable = function () {
     input.attr('disabled', 'disabled');
     button.attr('disabled', 'disabled');
+    mediaFilter.attr('disabled', 'disabled');
   };
 
   // enable button and input
   that.enable = function () {
     input.removeAttr('disabled');
     button.removeAttr('disabled');
+    mediaFilter.removeAttr('disabled');
   };
 
   return that;

@@ -49,8 +49,8 @@ $app->get('/api/search', function(Request $request, Response $response) use($acr
 
     // for each item in the results, construct a URI pointing at the plugin
     // service API, in the form
-    // http://<plugin service domain and port>/api/topic?uri=<topic URI>
-    $baseApiUri = $request->getUri()->withPath('/api/topic');
+    // http://<plugin service domain and port>/api/proxy?uri=<topic URI>
+    $baseApiUri = $request->getUri()->withPath('/api/proxy');
 
     foreach($result['items'] as $index => $item)
     {
@@ -62,8 +62,8 @@ $app->get('/api/search', function(Request $request, Response $response) use($acr
     return $response->withJson($result);
 });
 
-// proxy for topic requests to Acropolis
-$app->get('/api/topic', function(Request $request, Response $response) use($acropolisUrl)
+// request proxy resource from Acropolis by URI
+$app->get('/api/proxy', function(Request $request, Response $response) use($acropolisUrl)
 {
     $topicUri = $request->getQueryParam('uri', $default=NULL);
     $media = $request->getQueryParam('media', $default='image');

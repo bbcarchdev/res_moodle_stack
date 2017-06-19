@@ -187,6 +187,10 @@ var SearchResultsPanel = function (selector) {
     // area if appropriate; otherwise show the results
     if (that.hasResults()) {
       that.setSearchResults();
+
+      // scroll to the first result
+      console.log('will scroll to ' + results.items[0].api_uri);
+      that.scrollTo(results.items[0].api_uri);
     }
     else {
       that.setSearchNoResults();
@@ -206,7 +210,7 @@ var SearchResultsPanel = function (selector) {
     var bodyPadding = parseInt(body.css('padding-top'));
     var top = offsets.top - bodyPadding;
 
-    body.animate({scrollTop: top}, {duration: 0});
+    body.animate({scrollTop: top}, {duration: 200});
   };
 
   return that;
@@ -440,6 +444,7 @@ var RESClient = function (endpoint, callbackUrl) {
   var offset = 0;
   var limit = 10;
   var lastQuery = null;
+  var lastMedia = null;
 
   that.reset = function () {
     offset = 0;
@@ -454,6 +459,7 @@ var RESClient = function (endpoint, callbackUrl) {
     var media = params.media;
 
     lastQuery = query;
+    lastMedia = media;
 
     var url = endpoint + 'search?q=' + encodeURIComponent(query) +
       '&offset=' + offset + '&media=' + media;
@@ -478,12 +484,12 @@ var RESClient = function (endpoint, callbackUrl) {
   };
 
   that.more = function () {
-    if (!lastQuery) {
+    if (!(lastQuery && lastMedia)) {
       return;
     }
 
     offset += limit;
-    that.search(lastQuery);
+    that.search({query: lastQuery, media: lastMedia});
   };
 
   that.topic = function (topicUri) {

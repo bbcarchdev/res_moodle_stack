@@ -10,18 +10,18 @@
     <style>
       #search-form {
         margin: 7.5px 0;
+        display: flex;
+        align-items: center;
       }
-      [data-role=search-input-container] {
-        width: 30%;
-      }
-      [data-role=search-input] {
-        width: 100% !important;
+      #search-form div {
+        margin: 0 8px 0 0;
+        text-align: right;
       }
       [data-role=search-button] {
-        width: 10%;
+        min-width: 75px;
       }
       [data-role=search-media-filter] {
-        max-width: 100px;
+        min-width: 100px;
       }
       [data-role=result-box] {
         width: 100%;
@@ -86,14 +86,14 @@
     <div id="navbar" class="navbar navbar-default navbar-fixed-top">
       <div class="container">
         <!-- search form -->
-        <form class="form-inline" method="GET" id="search-form">
-          <div class="form-group">Search for topics matching</div>
-          <div class="form-group" data-role="search-input-container">
+        <form method="GET" id="search-form">
+          <div>Search for topics matching</div>
+          <div>
             <input type="text" class="form-control" data-role="search-input" name="search-input"
                    placeholder="keywords" value="">
           </div>
-          <div class="form-group">
-            with related
+          <div>with related</div>
+          <div>
             <select name="search-media" class="form-control"
                     data-role="search-media-filter">
               <option value="image">images</option>
@@ -102,7 +102,9 @@
               <option value="text">text</option>
             </select>
           </div>
-          <button data-role="search-button" class="btn btn-primary">Go</button>
+          <div>
+            <button data-role="search-button" class="btn btn-primary">Go</button>
+          </div>
         </form>
       </div>
     </div>

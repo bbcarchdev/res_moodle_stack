@@ -13,9 +13,15 @@ class RESClient
 {
     private $acropolisUrl;
 
-    public function __construct($acropolisUrl)
+    public function __construct($acropolisUrl, $lod=NULL)
     {
         $this->acropolisUrl = $acropolisUrl;
+
+        if(empty($lod))
+        {
+            $lod = new LOD();
+        }
+        $this->lod = $lod;
     }
 
     /*
@@ -43,13 +49,12 @@ class RESClient
 
             $result['acropolis_uri'] = $uri;
 
-            $lod = new LOD();
-            $searchResultResource = $lod[$uri];
+            $searchResultResource = $this->lod[$uri];
 
             foreach($searchResultResource['olo:slot'] as $slot)
             {
                 $slotUri = $slot->value;
-                $slotResource = $lod[$slotUri];
+                $slotResource = $this->lod[$slotUri];
 
                 // if we can't resolve the slot resource, don't do anything
                 if(!$slotResource)
@@ -61,7 +66,7 @@ class RESClient
                 {
                     if($slotItem->isResource())
                     {
-                        $topic = $lod[$slotItem->value];
+                        $topic = $this->lod[$slotItem->value];
 
                         $label = "{$topic['dcterms:title,rdfs:label']}";
 
@@ -103,41 +108,40 @@ class RESClient
      */
     public function proxy($proxyUri, $media, $format='json')
     {
-        $lod = new LOD();
-        $proxy = $lod->fetch($proxyUri);
+        $proxy = $this->lod->fetch($proxyUri);
 
         if(!$proxy)
         {
             return ($format === 'json' ? NULL : '');
         }
 
-        $proxyLabel = "{$proxy['rdfs:label,dcterms:title']}";
-        $proxyDescription = "{$proxy['dcterms:description,rdfs:comment,po:synopsis']}";
-
         // find all the resources which could be useful;
         // if the proxy has olo:slot resources, we want their olo:items
         $slotItemUris = array();
-        $slotResources = $proxy['olo:slot'];
+        $slotObjectResources = $proxy['olo:slot'];
 
-        foreach($slotResources as $slotResource)
+        foreach($slotObjectResources as $slotObjectResource)
         {
-            $slotResourceUri = "$slotResource";
-            $slotResource = $lod[$slotResourceUri];
+            $slotResourceUri = "$slotObjectResource";
+            $slotResource = $this->lod[$slotResourceUri];
             $slotItemUris[] = "{$slotResource['olo:item']}";
         }
 
         // fetch the slot resources; we need these to be able to get the
         // players
-        $lod->fetchAll($slotItemUris);
+        $this->lod->fetchAll($slotItemUris);
 
         // if the format is RDF, return the whole LOD object as Turtle
         // (mostly useful for dev)
         if($format === 'rdf')
         {
-            return Rdf::toTurtle($lod);
+            return Rdf::toTurtle($this->lod);
         }
         else
         {
+            $proxyLabel = "{$proxy['rdfs:label,dcterms:title']}";
+            $proxyDescription = "{$proxy['dcterms:description,rdfs:comment,po:synopsis']}";
+
             // convert relevant resources to JSON
             $pages = array();
             $players = array();
@@ -169,7 +173,7 @@ class RESClient
                 // retrieve the URIs of the media which are same as the slot item
                 // ($slotItemUri is a RES proxy URI, so this gives us the URI
                 // of the original resource)
-                $sameAsSlotItemUris = $lod->getSameAs($slotItemUri);
+                $sameAsSlotItemUris = $this->lod->getSameAs($slotItemUri);
 
                 // also get the topics or primary topics of the resources which
                 // are sameAs the slot item
@@ -181,7 +185,7 @@ class RESClient
 
                 foreach($sameAsSlotItemUris as $sameAsSlotItemUri)
                 {
-                    $sameAsResource = $lod[$sameAsSlotItemUri];
+                    $sameAsResource = $this->lod[$sameAsSlotItemUri];
                     $topicUris[] = "{$sameAsResource[$topicPredicates]}";
                 }
 
@@ -191,7 +195,7 @@ class RESClient
                     // we don't get any date statements unless we fetch the
                     // resource; but fetching it serially is too slow; so for
                     // now, just resolve using the graph we already have
-                    $resource = $lod[$possibleMediaUri];
+                    $resource = $this->lod[$possibleMediaUri];
 
                     if(empty($resource))
                     {

@@ -199,10 +199,7 @@ class RESClient
 
         // fetch the slot resources; we need these to be able to get the
         // players
-        foreach($slotItemUris as $uriToFetch)
-        {
-            $lod->fetch($uriToFetch);
-        }
+        $lod->fetchAll($slotItemUris);
 
         // if the format is RDF, return the whole LOD object as Turtle
         // (mostly useful for dev)

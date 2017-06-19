@@ -24,11 +24,18 @@ var SearchForm = function (selector) {
 
   var element = $(selector);
   var input = element.find('[data-role=search-input]');
+  var mediaFilter = element.find('[data-role=search-media-filter]');
   var button = element.find('[data-role=search-button]');
 
   button.on('click', function (e) {
     e.preventDefault();
-    that.trigger('search:send', input.val());
+
+    var params = {
+        query: input.val(),
+        media: mediaFilter.find('option:selected').val()
+    };
+
+    that.trigger('search:send', params);
   });
 
   // disable the button and search input
@@ -440,11 +447,14 @@ var RESClient = function (endpoint, callbackUrl) {
     offset = newOffset;
   };
 
-  that.search = function (query) {
+  that.search = function (params) {
+    var query = params.query;
+    var media = params.media;
+
     lastQuery = query;
 
     var url = endpoint + 'search?q=' + encodeURIComponent(query) +
-      '&offset=' + offset;
+      '&offset=' + offset + '&media=' + media;
 
     console.log('search URL: ' + url);
 
@@ -498,9 +508,9 @@ var RESClient = function (endpoint, callbackUrl) {
 
 var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, client, app) {
   // handler for clicks on the search button
-  searchForm.on('search:send', function (e, query) {
+  searchForm.on('search:send', function (e, params) {
     // return if there's no search term
-    if (query === '') {
+    if (params.query === '') {
       return;
     }
 
@@ -519,7 +529,7 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
     client.reset();
 
     // perform the search
-    client.search(query);
+    client.search(params);
   });
 
   // handler for clicks on the "load more" button

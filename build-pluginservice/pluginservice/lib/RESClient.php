@@ -235,8 +235,18 @@ class RESClient
                 // retrieve the URIs of the media which are same as the slot item
                 // ($slotItemUri is a RES proxy URI, so this gives us the URI
                 // of the original resource)
-                $possibleMediaUris = $lod->getSameAs($slotItemUri);
+                $sameAsSlotItemUris = $lod->getSameAs($slotItemUri);
 
+                // also get the topics or primary topics of the resources which
+                // are sameAs the slot item
+                $topicUris = array();
+                foreach($sameAsSlotItemUris as $sameAsSlotItemUri)
+                {
+                    $sameAsResource = $lod[$sameAsSlotItemUri];
+                    $topicUris[] = "{$sameAsResource['foaf:topic,foaf:primaryTopic,schema:about']}";
+                }
+
+                $possibleMediaUris = array_merge($sameAsSlotItemUris, $topicUris);
                 foreach($possibleMediaUris as $possibleMediaUri)
                 {
                     // we don't get any date statements unless we fetch the

@@ -5,74 +5,8 @@ require_once(__DIR__ . '/../vendor/autoload.php');
 
 use res\liblod\LOD;
 use res\liblod\Rdf;
-
-function isVideo($lodinstance)
-{
-    return $lodinstance->hasType(
-        'dcmitype:MovingImage',
-        'schema:Movie',
-        'schema:VideoObject',
-        'po:TVContent'
-    );
-}
-
-function isAudio($lodinstance)
-{
-    return $lodinstance->hasType(
-        'dcmitype:Sound',
-        'schema:AudioObject',
-        'po:RadioContent'
-    );
-}
-
-function isImage($lodinstance)
-{
-    return $lodinstance->hasType(
-        'dcmitype:StillImage',
-        'schema:Photograph',
-        'schema:ImageObject',
-        'foaf:Image'
-    );
-}
-
-function isText($lodinstance)
-{
-    return $lodinstance->hasType(
-        'dcmitype:Text'
-    );
-}
-
-/* returns media type if the LODInstance $lodinstance has rdf:type <media type>,
-   where <media type> is a recognisable media RDF type; NULL otherwise;
-   media type is one of
-   'audio', 'video', 'image', 'text' */
-function getMediaType($lodinstance)
-{
-    // early return if $lodinstance is not set
-    if(empty($lodinstance))
-    {
-        return NULL;
-    }
-
-    if(isVideo($lodinstance))
-    {
-        return 'video';
-    }
-    else if(isAudio($lodinstance))
-    {
-        return 'audio';
-    }
-    else if(isImage($lodinstance))
-    {
-        return 'image';
-    }
-    else if(isText($lodinstance))
-    {
-        return 'text';
-    }
-
-    return NULL;
-}
+use res\libres\RESMedia;
+use res\libres\RESLicence;
 
 /* Client for RES */
 class RESClient
@@ -240,11 +174,15 @@ class RESClient
                 // also get the topics or primary topics of the resources which
                 // are sameAs the slot item
                 $topicUris = array();
-                $predicates = 'foaf:topic,foaf:primaryTopic,schema:about';
+                $topicPredicates = 'foaf:topic,foaf:primaryTopic,schema:about';
+                $licensePredicates = 'cc:license,dcterms:license,' .
+                                     'dcterms:rights,dcterms:accessRights,' .
+                                     'xhtml:license';
+
                 foreach($sameAsSlotItemUris as $sameAsSlotItemUri)
                 {
                     $sameAsResource = $lod[$sameAsSlotItemUri];
-                    $topicUris[] = "{$sameAsResource[$predicates]}";
+                    $topicUris[] = "{$sameAsResource[$topicPredicates]}";
                 }
 
                 $possibleMediaUris = array_merge($sameAsSlotItemUris, $topicUris);
@@ -265,14 +203,21 @@ class RESClient
                     // type filter (if set)
                     foreach($resource['mrss:player,mrss:content'] as $mediaUri)
                     {
-                        $mediaType = getMediaType($resource);
+                        $mediaType = RESMedia::getMediaType($resource);
 
                         if($mediaType === $media)
                         {
+                            $licence = "{$resource[$licensePredicates]}";
+                            if(!empty($licence))
+                            {
+                                $licence = RESLicence::getShortForm($licence);
+                            }
+
                             $players[] = array(
                                 'sourceUri' => $possibleMediaUri,
                                 'uri' => "$mediaUri",
                                 'mediaType' => $mediaType,
+                                'license' => $licence,
                                 'label' => "{$resource['dcterms:title,rdfs:label']}",
                                 'description' => "{$resource['dcterms:description,rdfs:comment']}",
                                 'thumbnail' => "{$resource['schema:thumbnailUrl']}",

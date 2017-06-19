@@ -240,10 +240,11 @@ class RESClient
                 // also get the topics or primary topics of the resources which
                 // are sameAs the slot item
                 $topicUris = array();
+                $predicates = 'foaf:topic,foaf:primaryTopic,schema:about';
                 foreach($sameAsSlotItemUris as $sameAsSlotItemUri)
                 {
                     $sameAsResource = $lod[$sameAsSlotItemUri];
-                    $topicUris[] = "{$sameAsResource['foaf:topic,foaf:primaryTopic,schema:about']}";
+                    $topicUris[] = "{$sameAsResource[$predicates]}";
                 }
 
                 $possibleMediaUris = array_merge($sameAsSlotItemUris, $topicUris);
@@ -266,21 +267,19 @@ class RESClient
                     {
                         $mediaType = getMediaType($resource);
 
-                        if($mediaType && ($mediaType !== $media))
+                        if($mediaType === $media)
                         {
-                            continue;
+                            $players[] = array(
+                                'sourceUri' => $possibleMediaUri,
+                                'uri' => "$mediaUri",
+                                'mediaType' => $mediaType,
+                                'label' => "{$resource['dcterms:title,rdfs:label']}",
+                                'description' => "{$resource['dcterms:description,rdfs:comment']}",
+                                'thumbnail' => "{$resource['schema:thumbnailUrl']}",
+                                'date' => "{$resource['dcterms:date']}",
+                                'location' => "{$resource['lio:location']}"
+                            );
                         }
-
-                        $players[] = array(
-                            'source_uri' => $possibleMediaUri,
-                            'uri' => "$mediaUri",
-                            'mediaType' => $mediaType,
-                            'label' => "{$resource['dcterms:title,rdfs:label']}",
-                            'description' => "{$resource['dcterms:description,rdfs:comment']}",
-                            'thumbnail' => "{$resource['schema:thumbnailUrl']}",
-                            'date' => "{$resource['dcterms:date']}",
-                            'location' => "{$resource['lio:location']}"
-                        );
                     }
                 }
             }

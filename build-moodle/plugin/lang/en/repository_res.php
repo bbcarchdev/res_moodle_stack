@@ -11,3 +11,4 @@ $string['pluginname'] = 'RES';
 $string['configplugin'] = 'Configuration for RES plugin';
 $string['pluginname_help'] = 'Enables inclusion of RES resources in Moodle.';
 $string['res:view'] = 'View the Research and Education Space repository';
+$string['pluginservice_url'] = 'URL of the RES Moodle plugin service';

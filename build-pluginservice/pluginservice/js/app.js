@@ -15,6 +15,9 @@ window.App = function (endpoint, callbackUrl) {
         topicPanel,
         client
       );
+
+      // populate audiences in the search expander
+      client.audiences();
     }
   };
 
@@ -27,6 +30,7 @@ var SearchForm = function (selector) {
   var element = $(selector);
   var input = element.find('[data-role=search-input]');
   var mediaFilter = element.find('[data-role=search-media-filter]');
+  var searchExpander = element.find('[data-role=search-expander-button]');
   var button = element.find('[data-role=search-button]');
 
   var audiences = [];
@@ -63,6 +67,22 @@ var SearchForm = function (selector) {
     audiences = audiencesSelected;
   };
 
+  // set to true if one or more expanders have been set for the search
+  that.setExpanded = function (bool) {
+    if (bool) {
+      searchExpander.addClass('btn-success');
+    }
+    else {
+      searchExpander.removeClass('btn-success');
+    }
+  };
+
+  // once the search expander dialog is populated, call this to enable the
+  // button which opens it
+  that.enableSearchExpander = function () {
+    searchExpander.removeAttr('disabled');
+  };
+
   return that;
 };
 
@@ -71,6 +91,7 @@ var SearchExpander = function (selector) {
 
   var element = $(selector);
   var saveButton = element.find('[data-role="search-expander-save-btn"]');
+  var audiencesElement = element.find('[data-role="search-expander-audiences"]');
 
   saveButton.click(function () {
     // get selected audiences
@@ -81,10 +102,28 @@ var SearchExpander = function (selector) {
     }
 
     // trigger event with those audiences
-    that.trigger('searchExpander:audiences', {audiences: audiences});
+    that.trigger('searchExpander:audiencesSelected', {audiences: audiences});
 
     element.modal('hide');
   });
+
+  // populate dialog from audience data
+  // content is an array like
+  // [{uri: '<audience URI>', label: '<audience label>'}, ...]
+  that.populateAudiences = function (content) {
+    for (var i = 0; i < content.length; i++) {
+      var html = '<div class="checkbox">' +
+                 '  <label>' +
+                 '    <input type="checkbox" value="' + content[i].uri + '">' +
+                 content[i].label +
+                 '  </label>' +
+                 '</div>';
+
+      audiencesElement.append(html);
+    }
+
+    that.trigger('searchExpander:audiencesReady');
+  };
 
   return that;
 };
@@ -515,13 +554,15 @@ var RESClient = function (endpoint, callbackUrl) {
     lastQuery = query;
     lastMedia = media;
 
-    var audiencesQuerystring = '';
-    for (var i = 0; i < audiences.length; i++) {
-      if (audiencesQuerystring !== '') {
-        audiencesQuerystring += '&';
-      }
+    if (audiences) {
+      var audiencesQuerystring = '';
+      for (var i = 0; i < audiences.length; i++) {
+        if (audiencesQuerystring !== '') {
+          audiencesQuerystring += '&';
+        }
 
-      audiencesQuerystring += 'for[]=' + encodeURIComponent(audiences[i]);
+        audiencesQuerystring += 'for[]=' + encodeURIComponent(audiences[i]);
+      }
     }
 
     var url = endpoint + 'search?q=' + encodeURIComponent(query) +
@@ -574,6 +615,24 @@ var RESClient = function (endpoint, callbackUrl) {
     });
   };
 
+  that.audiences = function () {
+    var audiencesUri = endpoint + 'audiences';
+
+    $.ajax({
+      url: audiencesUri,
+
+      dataType: 'json',
+
+      success: function (content) {
+        that.trigger('client:audiences', {audiences: content});
+      },
+
+      error: function (err) {
+        that.trigger('client:error', err);
+      }
+    });
+  };
+
   return that;
 };
 
@@ -603,8 +662,25 @@ var EventCoordinator = function (searchForm, searchExpander, searchResultsPanel,
     client.search(params);
   });
 
-  searchExpander.on('searchExpander:audiences', function (e, params) {
-    searchForm.setAudiences(params.audiences);
+  // handler for population of search expander dialog - enable the button
+  // in the search from which opens the expander dialog
+  searchExpander.on('searchExpander:audiencesReady', function () {
+    searchForm.enableSearchExpander();
+  });
+
+  // handler for audience selection in the search expander modal
+  searchExpander.on('searchExpander:audiencesSelected', function (e, params) {
+    var audiences = params.audiences;
+
+    // highlight the expander button if one or more audiences have been selected
+    if (audiences.length > 0) {
+      searchForm.setExpanded(true);
+    }
+    else {
+      searchForm.setExpanded(false);
+    }
+
+    searchForm.setAudiences(audiences);
   });
 
   // handler for clicks on the "load more" button
@@ -652,6 +728,11 @@ var EventCoordinator = function (searchForm, searchExpander, searchResultsPanel,
   // handler for topic selected - forward selected item to Moodle
   topicPanel.on('topic:select', function (e, mediaObj) {
     topicPanel.forward(mediaObj);
+  });
+
+  // handler for audiences returned from Acropolis
+  client.on('client:audiences', function (e, content) {
+    searchExpander.populateAudiences(content.audiences);
   });
 
   // handler for topic returned from Acropolis

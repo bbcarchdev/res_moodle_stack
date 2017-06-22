@@ -25,6 +25,34 @@ class RESClient
     }
 
     /*
+     * Fetch /audiences URI from RES
+     * TODO may be multiple pages of audiences in future, so may need to revisit
+     */
+    public function audiences()
+    {
+        $uri = rtrim($this->acropolisUrl, '/') . '/audiences';
+        $audiencesInstance = $this->lod[$uri];
+
+        $audiences = array();
+
+        foreach($audiencesInstance['rdfs:seeAlso'] as $audienceObject)
+        {
+            $audienceUri = "$audienceObject";
+            $label = "{$this->lod[$audienceUri]['rdfs:label']}";
+
+            if($label !== 'Everyone')
+            {
+                $audiences[] = array(
+                    'uri' => $audienceUri,
+                    'label' => $label
+                );
+            }
+        }
+
+        return $audiences;
+    }
+
+    /*
      * Search RES for topics with related media.
      * $media is one of 'audio', 'image', 'text' or 'video'
      * $audiences is an array of recognised Acropolis audience URIs

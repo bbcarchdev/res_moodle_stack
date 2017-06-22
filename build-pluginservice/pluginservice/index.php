@@ -34,6 +34,14 @@ $app->get('/', function (Request $request, Response $response)
                     ->withHeader('Content-Location', '/ui.html');
 });
 
+// get all audiences known to Acropolig
+$app->get('/api/audiences', function(Request $request, Response $response) use($acropolisUrl)
+{
+    $client = new RESClient($acropolisUrl);
+    $result = $client->audiences();
+    return $response->withJson($result);
+});
+
 // proxy for searches on Acropolis
 // call with /api/search?q=<search term>&media=<media type>&limit=<limit>&offset=<offset>&for[]=<audience URI>
 // (for[] can be repeated multiple times)

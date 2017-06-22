@@ -126,7 +126,8 @@
           </div>
           <!-- trigger filter dialog -->
           <div>
-            <button type="button" class="btn" data-toggle="modal" data-target="#search-expander">
+            <button type="button" class="btn" data-toggle="modal" disabled="disabled"
+                    data-role="search-expander-button" data-target="#search-expander">
               <span class="glyphicon glyphicon-expand" title="Expand search results"></span>
             </button>
           </div>
@@ -147,21 +148,9 @@
           </div>
           <div class="modal-body">
             <form>
-              <div class="form-group" id="search-expander-audiences">
+              <div class="form-group" data-role="search-expander-audiences">
                 <p><label>Also include results available to:</label></p>
                 <!-- this is populated from the pluginservice API -->
-                <div class="checkbox">
-                  <label>
-                    <input type="checkbox" value="http://bobnational.net/#members">
-                    Authorised users of BoB National
-                  </label>
-                </div>
-                <div class="checkbox">
-                  <label>
-                    <input type="checkbox" value="http://shakespeare.acropolis.org.uk/#members">
-                    Authorised users of the BBC Shakespeare Archive Resource
-                  </label>
-                </div>
               </div>
               <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
               <button type="button" class="btn btn-primary" data-role="search-expander-save-btn">Save changes</button>
@@ -177,10 +166,6 @@
         <p>Please enter a search</p>
       </div>
 
-      <div class="ui-inactive" data-role="search-in-progress">
-        <div class="spinner"></div>
-      </div>
-
       <div class="ui-inactive" data-role="no-search-results">
         <p>No results for that search - please try again</p>
       </div>
@@ -193,6 +178,10 @@
             Load more
           </button>
         </p>
+      </div>
+
+      <div class="ui-inactive" data-role="search-in-progress">
+        <div class="spinner"></div>
       </div>
     </div>
 

@@ -601,7 +601,7 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
     searchResultsPanel.returnToSavedScrollPosition();
   });
 
-  // handler for topic selected - forward back to Moodle
+  // handler for topic selected - forward selected item to Moodle
   topicPanel.on('topic:select', function (e, mediaObj) {
     topicPanel.forward(mediaObj);
   });

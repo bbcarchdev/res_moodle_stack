@@ -27,8 +27,9 @@ class RESClient
     /*
      * Search RES for topics with related media.
      * $media is one of 'audio', 'image', 'text' or 'video'
+     * $audiences is an array of recognised Acropolis audience URIs
      */
-    public function search($query, $media, $limit=10, $offset=0)
+    public function search($query, $media, $limit=10, $offset=0, $audiences=NULL)
     {
         $result = array(
             'acropolis_uri' => NULL,
@@ -46,6 +47,21 @@ class RESClient
                    '&media=' . urlencode($media) .
                    '&limit=' . urlencode($limit) .
                    '&offset=' . urlencode($offset);
+
+            if(is_array($audiences))
+            {
+                $audiencesQuery = '';
+                foreach($audiences as $audience)
+                {
+                    if($audiencesQuery !== '')
+                    {
+                        $audiencesQuery .= '&';
+                    }
+                    $audiencesQuery .= 'for=' . urlencode($audience);
+                }
+
+                $uri .= '&' . $audiencesQuery;
+            }
 
             $result['acropolis_uri'] = $uri;
 

@@ -521,7 +521,7 @@ var RESClient = function (endpoint, callbackUrl) {
         audiencesQuerystring += '&';
       }
 
-      audiencesQuerystring += 'for=' + encodeURIComponent(audiences[i]);
+      audiencesQuerystring += 'for[]=' + encodeURIComponent(audiences[i]);
     }
 
     var url = endpoint + 'search?q=' + encodeURIComponent(query) +

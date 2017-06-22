@@ -35,17 +35,19 @@ $app->get('/', function (Request $request, Response $response)
 });
 
 // proxy for searches on Acropolis
-// call with /api/search?q=<search term>
+// call with /api/search?q=<search term>&media=<media type>&limit=<limit>&offset=<offset>&for[]=<audience URI>
+// (for[] can be repeated multiple times)
 $app->get('/api/search', function(Request $request, Response $response) use($acropolisUrl)
 {
     $query = $request->getQueryParam('q', $default=NULL);
     $media = $request->getQueryParam('media', $default='image');
     $limit = intval($request->getQueryParam('limit', $default=10));
     $offset = intval($request->getQueryParam('offset', $default=0));
+    $audiences = $request->getQueryParam('for', $default=NULL);
 
     $client = new RESClient($acropolisUrl);
 
-    $result = $client->search($query, $media, $limit, $offset);
+    $result = $client->search($query, $media, $limit, $offset, $audiences);
 
     // for each item in the results, construct a URI pointing at the plugin
     // service API, in the form

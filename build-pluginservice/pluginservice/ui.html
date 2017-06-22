@@ -8,12 +8,12 @@
     <link href="./css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-      #search-form {
+      .flex {
         margin: 7.5px 0;
         display: flex;
         align-items: center;
       }
-      #search-form div {
+      .flex div {
         margin: 0 8px 0 0;
         text-align: right;
       }
@@ -108,26 +108,66 @@
     <div id="navbar" class="navbar navbar-default navbar-fixed-top">
       <!-- search form -->
       <div class="container">
-        <form method="GET" id="search-form">
-          <div>Search for topics matching</div>
+        <form method="GET" id="search-form" class="flex">
+          <div>Find topics matching</div>
           <div>
             <input type="text" class="form-control" data-role="search-input" name="search-input"
                    placeholder="keywords" value="">
           </div>
-          <div>with related</div>
+          <div>with</div>
           <div>
             <select name="search-media" class="form-control"
                     data-role="search-media-filter">
               <option value="image">images</option>
               <option value="video">videos</option>
               <option value="audio">audio</option>
-              <option value="text">text</option>
+              <option value="text">texts</option>
             </select>
+          </div>
+          <!-- trigger filter dialog -->
+          <div>
+            <button type="button" class="btn" data-toggle="modal" data-target="#search-expander">
+              <span class="glyphicon glyphicon-expand" title="Expand search results"></span>
+            </button>
           </div>
           <div>
             <button data-role="search-button" class="btn btn-primary">Go</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- filter dialog -->
+    <div class="modal fade" id="search-expander" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Include more results</h4>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group" id="search-expander-audiences">
+                <p><label>Also include results available to:</label></p>
+                <!-- this is populated from the pluginservice API -->
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" value="http://bobnational.net/#members">
+                    Authorised users of BoB National
+                  </label>
+                </div>
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" value="http://shakespeare.acropolis.org.uk/#members">
+                    Authorised users of the BBC Shakespeare Archive Resource
+                  </label>
+                </div>
+              </div>
+              <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" data-role="search-expander-save-btn">Save changes</button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
 

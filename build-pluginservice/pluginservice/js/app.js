@@ -4,11 +4,13 @@ window.App = function (endpoint, callbackUrl) {
   var that = {
     init: function () {
       var searchForm = SearchForm('#search-form');
+      var searchExpander = SearchExpander('#search-expander');
       var searchResultsPanel = SearchResultsPanel('#search-results-panel');
       var topicPanel = TopicPanel('#topic-panel', callbackUrl);
       var client = RESClient(endpoint, callbackUrl);
       var eventCoordinator = EventCoordinator(
         searchForm,
+        searchExpander,
         searchResultsPanel,
         topicPanel,
         client
@@ -27,12 +29,15 @@ var SearchForm = function (selector) {
   var mediaFilter = element.find('[data-role=search-media-filter]');
   var button = element.find('[data-role=search-button]');
 
+  var audiences = [];
+
   button.on('click', function (e) {
     e.preventDefault();
 
     var params = {
-        query: input.val(),
-        media: mediaFilter.find('option:selected').val()
+      query: input.val(),
+      media: mediaFilter.find('option:selected').val(),
+      audiences: audiences
     };
 
     that.trigger('search:send', params);
@@ -51,6 +56,35 @@ var SearchForm = function (selector) {
     button.removeAttr('disabled');
     mediaFilter.removeAttr('disabled');
   };
+
+  // set audiences to include with the search
+  // audiences: array of audience URIs
+  that.setAudiences = function (audiencesSelected) {
+    audiences = audiencesSelected;
+  };
+
+  return that;
+};
+
+var SearchExpander = function (selector) {
+  var that = $({});
+
+  var element = $(selector);
+  var saveButton = element.find('[data-role="search-expander-save-btn"]');
+
+  saveButton.click(function () {
+    // get selected audiences
+    var audiences = [];
+    var checkboxes = element.find('input[type="checkbox"]:checked');
+    for (var i = 0; i < checkboxes.length; i++) {
+      audiences.push(checkboxes[i].value);
+    }
+
+    // trigger event with those audiences
+    that.trigger('searchExpander:audiences', {audiences: audiences});
+
+    element.modal('hide');
+  });
 
   return that;
 };
@@ -476,12 +510,22 @@ var RESClient = function (endpoint, callbackUrl) {
   that.search = function (params) {
     var query = params.query;
     var media = params.media;
+    var audiences = params.audiences;
 
     lastQuery = query;
     lastMedia = media;
 
+    var audiencesQuerystring = '';
+    for (var i = 0; i < audiences.length; i++) {
+      if (audiencesQuerystring !== '') {
+        audiencesQuerystring += '&';
+      }
+
+      audiencesQuerystring += 'for=' + encodeURIComponent(audiences[i]);
+    }
+
     var url = endpoint + 'search?q=' + encodeURIComponent(query) +
-      '&offset=' + offset + '&media=' + media;
+      '&offset=' + offset + '&media=' + media + '&' + audiencesQuerystring;
 
     console.log('search URL: ' + url);
 
@@ -533,7 +577,7 @@ var RESClient = function (endpoint, callbackUrl) {
   return that;
 };
 
-var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, client, app) {
+var EventCoordinator = function (searchForm, searchExpander, searchResultsPanel, topicPanel, client, app) {
   // handler for clicks on the search button
   searchForm.on('search:send', function (e, params) {
     // return if there's no search term
@@ -557,6 +601,10 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
 
     // perform the search
     client.search(params);
+  });
+
+  searchExpander.on('searchExpander:audiences', function (e, params) {
+    searchForm.setAudiences(params.audiences);
   });
 
   // handler for clicks on the "load more" button

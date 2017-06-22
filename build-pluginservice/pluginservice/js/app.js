@@ -68,6 +68,20 @@ var SearchResultsPanel = function (selector) {
     that.trigger('results:more');
   });
 
+  // saved scroll position, for movement back to search results from topic
+  var savedScrollPosition = 0;
+
+  // save the current scroll position, so search results can be scrolled
+  // back to it when returning to search results from the topic panel
+  that.saveScrollPosition = function () {
+    savedScrollPosition = $(document.body).scrollTop();
+  };
+
+  // return to the last-saved scroll position (without animation)
+  that.returnToSavedScrollPosition = function () {
+    that.scrollToPosition(savedScrollPosition, 0);
+  };
+
   // clear search results and hide the search results heading
   that.clear = function () {
     topicBoxContainerElement.empty();
@@ -188,9 +202,9 @@ var SearchResultsPanel = function (selector) {
     if (that.hasResults()) {
       that.setSearchResults();
 
-      // scroll to the first result
+      // scroll to the first result with animation
       console.log('will scroll to ' + results.items[0].api_uri);
-      that.scrollTo(results.items[0].api_uri);
+      that.scrollTo(results.items[0].api_uri, 500);
     }
     else {
       that.setSearchNoResults();
@@ -200,7 +214,7 @@ var SearchResultsPanel = function (selector) {
   // scroll to the search result which has a topic URI corresponding to
   // topicUri; NB each search result HTML element is given a data-api-uri
   // attribute when created to facilitate this
-  that.scrollTo = function (topicUri) {
+  that.scrollTo = function (topicUri, duration) {
     var body = $(document.body);
 
     var offsets = element.find('[data-api-uri="' + topicUri + '"]').offset()
@@ -210,7 +224,12 @@ var SearchResultsPanel = function (selector) {
     var bodyPadding = parseInt(body.css('padding-top'));
     var top = offsets.top - bodyPadding;
 
-    body.animate({scrollTop: top}, {duration: 200});
+    that.scrollToPosition(top, duration);
+  };
+
+  that.scrollToPosition = function (top, duration) {
+    var body = $(document.body);
+    body.animate({scrollTop: top}, {duration: duration});
   };
 
   return that;
@@ -558,6 +577,9 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
 
   // handler for clicks on topics
   searchResultsPanel.on('results:load-topic', function (e, topicUri) {
+    // save the scroll position of the search panel
+    searchResultsPanel.saveScrollPosition();
+
     // hide the search panel, show the topic panel
     topicPanel.setActive();
     searchResultsPanel.setInactive();
@@ -575,8 +597,8 @@ var EventCoordinator = function (searchForm, searchResultsPanel, topicPanel, cli
     topicPanel.setInactive();
     searchResultsPanel.setActive();
 
-    // scroll to the indicated search result
-    searchResultsPanel.scrollTo(topicUri);
+    // scroll to the last saved scroll position on the search panel
+    searchResultsPanel.returnToSavedScrollPosition();
   });
 
   // handler for topic selected - forward back to Moodle

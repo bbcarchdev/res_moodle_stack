@@ -1,12 +1,18 @@
-# Moodle plugin
+# RES Moodle stack
 
-See https://github.com/moodle/moodle/tree/master/repository/wikimedia for the
-official Wikimedia plugin, which this is vaguely based on.
+This is a self-contained stack for deploying Moodle (running on Apache),
+MariaDB (with the Moodle database) and a RES search app (which can be
+accessed via a plugin in the Moodle instance). It runs standalone
+on a single machine, or can be deployed to Amazon Web Services (AWS).
+
+The stack uses [Docker](https://www.docker.com/) to build the images
+and [docker-compose](https://docs.docker.com/compose/overview/) to run them
+in such a way that they can talk to each other.
 
 ## Development
 
-For development purposes, you need to ensure that the following domain
-names resolve to 127.0.0.1 on your machine:
+To run the stack for development purposes, you need to ensure that the following
+domain names resolve to 127.0.0.1 on your machine:
 
     pluginservice
     moodle
@@ -14,10 +20,19 @@ names resolve to 127.0.0.1 on your machine:
 This can be done by editing your hosts file (e.g. /etc/hosts on a Linux
 machine).
 
+You also need the following software to build the images:
+
+* [Composer](https://getcomposer.org/download/)
+* [Docker](https://www.docker.com/get-docker)
+* [docker-compose](https://docs.docker.com/compose/install/)
+
 You can then run a Moodle instance on Apache + MariaDB with:
 
     git submodule init
     git submodule update
+    cd build-pluginservice/pluginservice
+    composer install
+    cd ../..
     docker-compose up --build
 
 Moodle will be accessible at http://moodle. Admin username/password:
@@ -25,7 +40,19 @@ Moodle will be accessible at http://moodle. Admin username/password:
 
 The RES search service will be at http://pluginservice:8888.
 
+The Moodle plugin can be accessed as follows:
+
+* Go to the test course (set up by default in the Docker image).
+* Login with admin/admin.
+* Select "Turn editing on" for the course.
+* Click on "Add activity or resource".
+* Select "URL" from the pop-up (right at the bottom on the left) and click "Add".
+* Click the "Choose a link" button, then select "RES" from the list of available plugins.
+
 ## Deployment
+
+This stack can be deployed to AWS with a small amount of pain, as explained
+below.
 
 ### Set up AWS access
 
@@ -46,7 +73,7 @@ Follow the prompts:
     Default region name [None]: eu-west-1 (or your default region if different)
     Default output format [None]:
 
-### Create Docker ECR registries and push Moodle plugin images
+### Create Docker ECR registries and push RES Moodle stack images
 
 Create an ECS Container repository to store each docker image into. I did this via the web console (https://eu-west-1.console.aws.amazon.com/ecs/home?region=eu-west-1#/repositories) and ended up with these repositories:
 
@@ -80,7 +107,7 @@ Push them to the container registry:
     docker push 075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_mariadb
     docker push 075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_pluginservice
 
-### Deploy application to EC2 using docker-compose
+### Deploy Moodle and plugin service to EC2 using docker-compose
 
 The Docker images can be deployed to AWS using the ECS CLI tool (http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_Configuration.html), which supports docker-compose.
 

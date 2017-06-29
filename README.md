@@ -16,8 +16,9 @@ machine).
 
 You can then run a Moodle instance on Apache + MariaDB with:
 
-    docker-compose build
-    docker-compose up
+    git submodule init
+    git submodule update
+    docker-compose up --build
 
 Moodle will be accessible at http://moodle. Admin username/password:
 `admin/admin`.

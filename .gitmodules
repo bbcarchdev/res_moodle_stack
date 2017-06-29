@@ -3,4 +3,4 @@
 	url = ssh://git@bitbucket.org/townxelliot/moodle-repository_res.git
 [submodule "build-pluginservice/pluginservice"]
 	path = build-pluginservice/pluginservice
-	url = ssh://git@bitbucket.org/townxelliot/res_moodle_plugin_service.git
+	url = ssh://git@bitbucket.org/townxelliot/res_search_service.git

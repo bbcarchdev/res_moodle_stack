@@ -1,0 +1,3 @@
+[submodule "build-moodle/plugin"]
+	path = build-moodle/plugin
+	url = ssh://git@bitbucket.org/townxelliot/res_moodle_plugin_distro_maker.git

@@ -33,7 +33,7 @@ services:
       # the back-end services)
       - MOODLE_URL=http://moodle
     volumes:
-      - ./build-moodle/plugin:/var/www/html/repository/res
+      - ./build-moodle/plugin/dist:/var/www/html/repository/res
   mariadb:
     image: res-moodle-plugin_mariadb
     build:
@@ -49,19 +49,3 @@ services:
       - MYSQL_USER=moodle
       - MYSQL_PASSWORD=moodle
       - MYSQL_ROOT_PASSWORD=moodle
-  pluginservice:
-    image: res-moodle-plugin_pluginservice
-    build:
-      context: ./build-pluginservice
-      dockerfile: Dockerfile-pluginservice
-      args:
-        - http_proxy=${http_proxy}
-        - https_proxy=${http_proxy}
-    ports:
-      - "8888:8888"
-    links:
-      - moodle
-    environment:
-      - ACROPOLIS_URL=http://acropolis.org.uk/
-    volumes:
-      - ./build-pluginservice/pluginservice:/var/www/html/

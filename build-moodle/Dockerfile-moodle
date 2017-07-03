@@ -50,7 +50,7 @@ RUN cd /tmp && \
     rm /tmp/moodle.tgz
 
 # copy plugin files to appropriate location
-COPY plugin /var/www/html/repository/res
+COPY plugin/dist /var/www/html/repository/res
 
 # set permissions
 RUN chown -R www-data:www-data /var/www/html

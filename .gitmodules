@@ -1,6 +1,0 @@
-[submodule "build-moodle/plugin"]
-	path = build-moodle/plugin
-	url = ssh://git@bitbucket.org/townxelliot/moodle-repository_res.git
-[submodule "build-pluginservice/pluginservice"]
-	path = build-pluginservice/pluginservice
-	url = ssh://git@bitbucket.org/townxelliot/res_search_service.git

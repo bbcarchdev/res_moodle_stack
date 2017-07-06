@@ -16,9 +16,6 @@ services:
     links:
       - mariadb
     environment:
-      # should be accessible from user's browser as it's put into an iframe
-      - PLUGINSERVICE_URL=http://pluginservice:8888/minimal.html
-
       # should match the entry under links (above)
       - MYSQL_HOST=mariadb
 
@@ -32,8 +29,8 @@ services:
       # callback URL and also needs to be accessible by the browser (not just
       # the back-end services)
       - MOODLE_URL=http://moodle
-    #volumes:
-    #  - ./build-moodle/plugin/dist:/var/www/html/repository/res
+    volumes:
+      - ./build-moodle/plugin/dist:/var/www/html/repository/res
   mariadb:
     image: res-moodle-plugin_mariadb
     build:

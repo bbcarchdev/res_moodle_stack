@@ -38,7 +38,7 @@ You can then run a Moodle instance on Apache + MariaDB with:
 Moodle will be accessible at http://moodle. Admin username/password:
 `admin/admin`.
 
-The RES search service will be at http://pluginservice:8888.
+The RES search service will be at http://pluginservice:8888/minimal.html.
 
 The Moodle plugin can be accessed as follows:
 

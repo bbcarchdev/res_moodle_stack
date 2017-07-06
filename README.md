@@ -1,9 +1,8 @@
 # RES Moodle stack
 
-This is a self-contained stack for deploying Moodle (running on Apache),
-MariaDB (with the Moodle database) and a RES search app (which can be
-accessed via a plugin in the Moodle instance). It runs standalone
-on a single machine, or can be deployed to Amazon Web Services (AWS).
+This is a self-contained stack for deploying Moodle with the RES search
+plugin (running on Apache) and MariaDB (with the Moodle database). It runs
+standalone on a single machine, or can be deployed to Amazon Web Services (AWS).
 
 The stack uses [Docker](https://www.docker.com/) to build the images
 and [docker-compose](https://docs.docker.com/compose/overview/) to run them
@@ -12,9 +11,8 @@ in such a way that they can talk to each other.
 ## Development
 
 To run the stack for development purposes, you need to ensure that the following
-domain names resolve to 127.0.0.1 on your machine:
+domain name resolves to 127.0.0.1 on your machine:
 
-    pluginservice
     moodle
 
 This can be done by editing your hosts file (e.g. /etc/hosts on a Linux
@@ -38,9 +36,7 @@ You can then run a Moodle instance on Apache + MariaDB with:
 Moodle will be accessible at http://moodle. Admin username/password:
 `admin/admin`.
 
-The RES search service will be at http://pluginservice:8888/minimal.html.
-
-The Moodle plugin can be accessed as follows:
+The RES Moodle plugin can be accessed as follows:
 
 * Go to the test course (set up by default in the Docker image).
 * Login with admin/admin.
@@ -79,7 +75,6 @@ Create an ECS Container repository to store each docker image into. I did this v
 
     075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_moodle
     075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_mariadb
-    075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_pluginservice
 
 Get the login for the container registry:
 
@@ -97,7 +92,6 @@ Tag the images:
 
     docker tag res-moodle-plugin_moodle 075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_moodle
     docker tag res-moodle-plugin_mariadb 075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_mariadb
-    docker tag res-moodle-plugin_pluginservice 075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_pluginservice
 
 (Note the tag for the image includes the domain name you got when you called `aws ecr get-login` above.)
 
@@ -105,9 +99,8 @@ Push them to the container registry:
 
     docker push 075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_moodle
     docker push 075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_mariadb
-    docker push 075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_pluginservice
 
-### Deploy Moodle and plugin service to EC2 using docker-compose
+### Deploy Moodle to EC2 using docker-compose
 
 The Docker images can be deployed to AWS using the ECS CLI tool (http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_Configuration.html), which supports docker-compose.
 
@@ -138,18 +131,6 @@ Create a task definition which is going to run on the cluster:
 Start the task on the cluster:
 
     aws ecs run-task --task-definition ecscompose-res-moodle-plugin-task --cluster res-moodle-plugin
-
-Because the Moodle plugin needs access to port 8888 on the instance, you will have to add a new role to the instance's security group to allow this. You can do this via the EC2 Management Console.
-
-1. View instances at https://eu-west-1.console.aws.amazon.com/ec2/v2/home?region=eu-west-1#Instances:sort=instanceId.
-2. Select the instance running the Moodle plugin and friends. In the bottom panel of the screen, find the "Security groups" section, which shows the main security group for the instance. Make a note of it.
-3. Select "Security Groups" in the left-hand menu.
-4. In the list, find the security group for the instance you made a note of earlier and select it.
-5. In the bottom panel, click on the "Inbound" tab.
-6. Click "Edit", then "Add Rule".
-7. Choose "Custom TCP" and enter "8888" for the port range, then save.
-
-(You can follow a similar process to add a rule to allow you to SSH to the instance if you need it.)
 
 Moodle should now be available at `http://<instance domain name>`.
 

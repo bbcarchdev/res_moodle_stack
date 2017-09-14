@@ -25,5 +25,5 @@ if (!$errors = $dbmanager->check_database_schema($schema)) {
     exit(0);
 }
 
-echo "Database structure us bad; may need to recreate container.\n";
+echo "Database structure is bad; may need to recreate container.\n";
 exit(1);

@@ -27,8 +27,8 @@ You also need the following software to build the images:
 You can then run a Moodle instance on Apache + MariaDB with:
 
     git submodule init
-    git submodule update
-    cd build-pluginservice/pluginservice
+    git submodule update --remote
+    cd build-moodle/plugin
     composer install
     cd ../..
     docker-compose up --build
@@ -40,7 +40,8 @@ The RES Moodle plugin can be accessed as follows:
 
 * Go to the test course (set up by default in the Docker image).
 * Login with admin/admin.
-* Select "Turn editing on" for the course.
+* Go to "Site home" (left-hand menu).
+* Click on the cog (top right) and select "Turn editing on" for the course.
 * Click on "Add activity or resource".
 * Select "URL" from the pop-up (right at the bottom on the left) and click "Add".
 * Click the "Choose a link" button, then select "RES" from the list of available plugins.

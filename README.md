@@ -33,8 +33,16 @@ You can then run a Moodle instance on Apache + MariaDB with:
     cd ../..
     docker-compose up --build
 
-Moodle will be accessible at http://moodle. Admin username/password:
-`admin/admin`.
+Note that if you subsequently update `res_moodle_plugin_distro_maker`,
+you will need to update the git submodule with
+
+     git submodule update --remote
+
+before you run docker-compose again.
+
+Once running, Moodle will be accessible at http://moodle.
+
+Admin username/password: `admin/admin`.
 
 The RES Moodle plugin can be accessed as follows:
 

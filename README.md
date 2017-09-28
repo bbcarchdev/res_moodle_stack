@@ -11,7 +11,7 @@ in such a way that they can talk to each other.
 ## Development
 
 To run the stack for development purposes, you need to ensure that the following
-domain name resolves to 127.0.0.1 on your machine:
+domain name resolves to the same IP address as localhost on your machine:
 
     moodle
 
@@ -57,13 +57,15 @@ The RES Moodle plugin can be accessed as follows:
 ## Deployment
 
 This stack can be deployed to AWS with a small amount of pain, as explained
-below.
+below. (Note that while the URIs given reference eu-west-1, they should work for
+other regions.)
 
 ### Set up AWS access
 
 You will need our AWS admin to set up an account and permissions for you.
 
-Install and configure AWS command line tools (these require Python):
+Install and configure AWS command line tools (these require
+[Python](https://www.python.org/downloads/)):
 
     pip install awscli
 
@@ -143,9 +145,12 @@ Start the task on the cluster:
 
 Moodle should now be available at `http://<instance domain name>`.
 
+## Author
+
+Elliot Smith - elliot.smith@bbc.co.uk
+
 ## Licence
 
-Apache v2
+This project is licensed under the terms of the [Apache License, version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
-Lightbulb icon from https://octicons.github.com/, released under the SIL OFL
-(http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL).
+Copyright © 2017 BBC

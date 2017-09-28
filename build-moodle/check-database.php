@@ -13,17 +13,18 @@ require('/var/www/html/config.php');
 require_once($CFG->libdir . '/clilib.php');
 
 if (empty($CFG->version)) {
-    echo "Database is not yet installed.\n";
+  echo "Database is not yet installed.\n";
+  exit(1);
+} else {
+  $dbmanager = $DB->get_manager();
+  $schema = $dbmanager->get_install_xml_schema();
+
+  if ($dbmanager->check_database_schema($schema)) {
+    echo "Database structure is bad; may need to recreate container.\n";
     exit(1);
+  }
 }
 
-$dbmanager = $DB->get_manager();
-$schema = $dbmanager->get_install_xml_schema();
-
-if (!$errors = $dbmanager->check_database_schema($schema)) {
-    echo "Database structure is ok.\n";
-    exit(0);
-}
-
-echo "Database structure is bad; may need to recreate container.\n";
-exit(1);
+// EVERYTHING IS GOING TO BE OK
+echo "Database structure is ok.\n";
+exit(0);

@@ -30,10 +30,10 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
 
-      # this is the URL at which other services should be able to reach Moodle
-      # from within the docker context; it is also passed by the Moodle plugin
-      # to the pluginservice as the callback URL and needs to be accessible in
-      # a browser, too
+      # this is the URL which other services should be able to reach Moodle at
+      # from within the docker context and should match the service name;
+      # NB this is needs to be accessible by the browser (not just
+      # the back-end services) as it's used by Ajax within the plugin UI
       - MOODLE_URL=${MOODLE_URL}
     mem_limit: 484m
   mariadb:

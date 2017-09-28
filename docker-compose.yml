@@ -1,5 +1,5 @@
-# NB you'll need to map "moodle" and "pluginservice" to 127.0.0.1 in your hosts
-# file for this to work; you'll also need to allow Moodle to use port 80
+# NB you'll need to map "moodle" to the same IP address as localhost in your
+# hosts file for this to work; you'll also need to allow Moodle to use port 80
 version: '2'
 services:
   moodle:
@@ -25,9 +25,8 @@ services:
 
       # this is the URL which other services should be able to reach Moodle at
       # from within the docker context and should match the service name;
-      # NB this is passed by the Moodle plugin to the pluginservice as the
-      # callback URL and also needs to be accessible by the browser (not just
-      # the back-end services)
+      # NB this is needs to be accessible by the browser (not just
+      # the back-end services) as it's used by Ajax within the plugin UI
       - MOODLE_URL=http://moodle
     volumes:
       - ./build-moodle/plugin/dist:/var/www/html/repository/res

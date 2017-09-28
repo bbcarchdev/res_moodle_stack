@@ -1,5 +1,5 @@
 # based on https://hub.docker.com/r/jauer/moodle/ but modified
-# for Moodle 3 and PHP 7 (Ubuntu 14 doesn't support a high enough PHP version
+# for Moodle 3 and PHP 7.* (Ubuntu 14 doesn't support a high enough PHP version
 # for Moodle 3); also has some gubbins so it works better with docker-compose
 
 FROM ubuntu:16.04
@@ -32,7 +32,7 @@ ENV MOODLE_URL=${MOODLE_URL} \
 
 # Download Moodle tarball;
 # get latest URL from https://download.moodle.org/releases/latest/
-RUN curl -L -o /tmp/moodle.tgz https://download.moodle.org/download.php/direct/stable33/moodle-3.3.tgz
+RUN curl -L -o /tmp/moodle.tgz https://download.moodle.org/stable33/moodle-latest-33.tgz
 
 # Moodle and Apache config and scripts
 COPY moodle-config.php /var/www/html/config.php

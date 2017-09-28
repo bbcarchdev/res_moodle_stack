@@ -1,3 +1,7 @@
+# copyright BBC 2017
+# author    Elliot Smith <elliot.smith@bbc.co.uk>
+# license   Apache v2 - http://www.apache.org/licenses/LICENSE-2.0
+#
 # NB you'll need to map "moodle" to the same IP address as localhost in your
 # hosts file for this to work; you'll also need to allow Moodle to use port 80
 version: '2'

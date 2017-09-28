@@ -147,10 +147,12 @@ Moodle should now be available at `http://<instance domain name>`.
 
 ## Author
 
-Elliot Smith - elliot.smith@bbc.co.uk
+[Elliot Smith](https://github.com/townxelliot) - elliot.smith@bbc.co.uk
 
 ## Licence
 
-This project is licensed under the terms of the [Apache License, version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
-
 Copyright © 2017 BBC
+
+This project is licensed under the terms of the
+[Apache License, version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+(see LICENCE-APACHE.txt).

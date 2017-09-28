@@ -2,8 +2,8 @@
 /**
  * Check for the existence of the Moodle database.
  *
- * @package   repository_res
- * @copyright 2017, Elliot Smith <elliot.smith@bbc.co.uk>
+ * @copyright BBC 2017
+ * @author    Elliot Smith <elliot.smith@bbc.co.uk>
  * @license   Apache v2 - http://www.apache.org/licenses/LICENSE-2.0
  */
 

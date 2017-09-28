@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# copyright BBC 2017
+# author    Elliot Smith <elliot.smith@bbc.co.uk>
+# license   Apache v2 - http://www.apache.org/licenses/LICENSE-2.0
+
 set -e
 
 chown -R mysql:mysql /var/lib/mysql
@@ -21,11 +26,11 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY "$MYSQL_ROOT_PASSWORD";
 EOF
 
 if [[ $MYSQL_DATABASE != "" ]]; then
-    echo "CREATE DATABASE IF NOT EXISTS \`$MYSQL_DATABASE\` CHARACTER SET utf8 COLLATE utf8_general_ci;" >> $tfile
+  echo "CREATE DATABASE IF NOT EXISTS \`$MYSQL_DATABASE\` CHARACTER SET utf8 COLLATE utf8_general_ci;" >> $tfile
 
-    if [[ $MYSQL_USER != "" ]]; then
-        echo "GRANT ALL ON \`$MYSQL_DATABASE\`.* to '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';" >> $tfile
-    fi
+  if [[ $MYSQL_USER != "" ]]; then
+    echo "GRANT ALL ON \`$MYSQL_DATABASE\`.* to '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';" >> $tfile
+  fi
 fi
 
 /usr/bin/mysql_ssl_rsa_setup

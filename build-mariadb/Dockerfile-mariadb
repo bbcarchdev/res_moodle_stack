@@ -1,3 +1,7 @@
+# copyright BBC 2017
+# author    Elliot Smith <elliot.smith@bbc.co.uk>
+# license   Apache v2 - http://www.apache.org/licenses/LICENSE-2.0
+#
 # based on centurylink/mysql (https://github.com/CenturyLinkLabs/docker-mysql)
 # but updated to Ubuntu 16.04 and with a config file which Moodle 3 is happy
 # with (specific InnoDB settings need to be enabled which centurylink doesn't

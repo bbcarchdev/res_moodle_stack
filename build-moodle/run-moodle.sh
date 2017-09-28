@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# copyright BBC 2017
+# author    Elliot Smith <elliot.smith@bbc.co.uk>
+# license   Apache v2 - http://www.apache.org/licenses/LICENSE-2.0
+
 # Wait for mysql
 until nc -z ${MYSQL_HOST} 3306; do
     echo "$(date) - waiting for mysql..."

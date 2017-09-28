@@ -1,3 +1,7 @@
+# copyright BBC 2017
+# author    Elliot Smith <elliot.smith@bbc.co.uk>
+# license   Apache v2 - http://www.apache.org/licenses/LICENSE-2.0
+#
 # based on https://hub.docker.com/r/jauer/moodle/ but modified
 # for Moodle 3 and PHP 7.* (Ubuntu 14 doesn't support a high enough PHP version
 # for Moodle 3); also has some gubbins so it works better with docker-compose

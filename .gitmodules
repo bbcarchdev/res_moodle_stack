@@ -1,3 +1,0 @@
-[submodule "build-moodle/plugin"]
-	path = build-moodle/plugin
-	url = https://townxelliot@bitbucket.org/townxelliot/res_moodle_plugin_distro_maker.git

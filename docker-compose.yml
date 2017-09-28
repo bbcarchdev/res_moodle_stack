@@ -32,8 +32,6 @@ services:
       # NB this is needs to be accessible by the browser (not just
       # the back-end services) as it's used by Ajax within the plugin UI
       - MOODLE_URL=http://moodle
-    volumes:
-      - ./build-moodle/plugin/dist:/var/www/html/repository/res
   mariadb:
     image: res-moodle-plugin_mariadb
     build:

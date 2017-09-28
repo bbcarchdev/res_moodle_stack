@@ -1,12 +1,13 @@
 # RES Moodle stack
 
-This is a self-contained stack for deploying Moodle with the RES search
-plugin (running on Apache) and MariaDB (with the Moodle database). It runs
+This is a self-contained stack for deploying Moodle with the
+[RES Moodle plugin](https://github.com/bbcarchdev/moodle-repository_res)
+(running on Apache) and MariaDB (with the Moodle database). It runs
 standalone on a single machine, or can be deployed to Amazon Web Services (AWS).
 
 The stack uses [Docker](https://www.docker.com/) to build the images
 and [docker-compose](https://docs.docker.com/compose/overview/) to run them
-in such a way that they can talk to each other.
+in such a way that they can communicate with each other.
 
 ## Development
 
@@ -82,7 +83,7 @@ Follow the prompts:
 
 ### Create Docker ECR registries and push RES Moodle stack images
 
-Create an ECS Container repository to store each docker image into. I did this via the web console (https://eu-west-1.console.aws.amazon.com/ecs/home?region=eu-west-1#/repositories) and ended up with these repositories:
+Create an ECS Container repository to store each of the two docker images (Apache, MariaDB) into. I did this via the web console (https://eu-west-1.console.aws.amazon.com/ecs/home?region=eu-west-1#/repositories) and ended up with these repositories:
 
     075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_moodle
     075239016712.dkr.ecr.eu-west-1.amazonaws.com/res-moodle-plugin_mariadb

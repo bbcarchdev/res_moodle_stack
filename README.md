@@ -9,6 +9,9 @@ The stack uses [Docker](https://www.docker.com/) to build the images
 and [docker-compose](https://docs.docker.com/compose/overview/) to run them
 in such a way that they can communicate with each other.
 
+The RES Moodle plugin is built on the Docker image using
+[`res_moodle_plugin_distro_maker`](https://github.com/bbcarchdev/res_moodle_plugin_distro_maker).
+
 ## Development
 
 To run the stack for development purposes, you need to ensure that the following
@@ -29,9 +32,6 @@ You can then run a Moodle instance on Apache + MariaDB with:
 
     git submodule init
     git submodule update --remote
-    cd build-moodle/plugin
-    composer install
-    cd ../..
     docker-compose up --build
 
 Note that if you subsequently update `res_moodle_plugin_distro_maker`,

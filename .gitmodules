@@ -1,0 +1,3 @@
+[submodule "build-moodle/res_moodle_plugin_distro_maker"]
+	path = build-moodle/res_moodle_plugin_distro_maker
+	url = https://github.com/bbcarchdev/res_moodle_plugin_distro_maker.git

@@ -4,9 +4,9 @@
 # author    Elliot Smith <elliot.smith@bbc.co.uk>
 # license   Apache v2 - http://www.apache.org/licenses/LICENSE-2.0
 
-# Wait for mysql
+# Wait for mariadb
 until nc -z ${MYSQL_HOST} 3306; do
-    echo "$(date) - waiting for mysql..."
+    echo "$(date) - waiting for mariadb..."
     sleep 2
 done
 

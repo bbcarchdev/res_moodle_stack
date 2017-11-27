@@ -9,7 +9,7 @@
 
 FROM ubuntu:16.04
 LABEL maintainer="Elliot Smith <elliot.smith@bbc.co.uk>"
-LABEL version="0.0.1"
+LABEL version="0.0.2"
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \

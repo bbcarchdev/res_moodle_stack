@@ -8,7 +8,8 @@
 # enable)
 
 FROM ubuntu:16.04
-MAINTAINER Elliot Smith <elliot.smith@bbc.co.uk>
+LABEL maintainer="Elliot Smith <elliot.smith@bbc.co.uk>"
+LABEL version="0.0.1"
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \

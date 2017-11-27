@@ -10,7 +10,7 @@ FROM ubuntu:16.04
 LABEL maintainer="Elliot Smith <elliot.smith@bbc.co.uk>"
 
 # This version tracks the version of moodle-repository_res
-LABEL version="0.0.8"
+LABEL version="0.0.9"
 
 # Let the container know that there is no tty
 ENV DEBIAN_FRONTEND noninteractive
